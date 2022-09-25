@@ -1,58 +1,55 @@
-import buildingsData from "./buildings.json";
-import recipesData from "./recipes.json";
-import itemsData from "./items.json";
+import buildingsData, { Building } from "./buildings";
+import recipesData, { Recipe } from "./recipes";
+import itemsData, { ItemWithoutRecipe } from "./items";
+import { RootShape } from "app/store";
 
-export interface Building {
-  id: string;
-  name: string;
-  description: string;
-  power: number;
-  powerExponent: number;
-  category: "PRODUCTION" | "EXTRACTOR" | "GENERATOR";
+interface Item extends ItemWithoutRecipe {
+  recipes: string[];
 }
 
-export interface Item {
-  id: string;
-  name: string;
-  stackSize: string;
-  points: number;
-  icon: string;
-  rawResource: boolean;
-}
+export type { Building, Item, Recipe };
 
-export interface Ingredient {
-  item: Item;
-  amount: number;
-}
+// Transform buildings to root shape
+const buildings = buildingsData.reduce(
+  (map: RootShape<Building>, building: Building) => {
+    const { id } = building;
+    map.allIds.push(id);
+    map.byId[id] = building;
+    return map;
+  },
+  { byId: {}, allIds: [] }
+);
 
-export interface Recipe {
-  id: string;
-  name: string;
-  alternate: boolean;
-  building: Building;
-  ingredients: Ingredient[];
-  product: Ingredient[];
-  duration: number;
-}
+// Transform recipes to root shape
+const recipes = recipesData.reduce(
+  (map: RootShape<Recipe>, recipe: Recipe) => {
+    const { id } = recipe;
+    map.allIds.push(id);
+    map.byId[id] = recipe;
+    return map;
+  },
+  {
+    byId: {},
+    allIds: [],
+  }
+);
 
-const buildingMap = new Map(buildingsData.map(building => [building.id, building]));
+// Transform items to root shape, apply empty array so they are ready to receive recipes
+const items = itemsData.reduce(
+  (map: RootShape<Item>, item: ItemWithoutRecipe) => {
+    const { id } = item;
+    map.allIds.push(id);
+    map.byId[id] = { ...item, recipes: [] };
+    return map;
+  },
+  { byId: {}, allIds: [] }
+);
 
-const itemMap = new Map(itemsData.map(item => [item.id, item]));
+// Attach recipes to items where they are the product of the recipe
+recipes.allIds.forEach(recipeId => {
+  recipes.byId[recipeId].product.forEach(ingredient => {
+    items.byId[ingredient.item].recipes.push(recipeId);
+  });
+});
 
-const processedRecipes = recipesData.map(recipe => ({
-  ...recipe,
-  building: buildingMap.get(recipe.building),
-  ingredients: recipe.ingredients.map(ingredient => ({
-    ...ingredient,
-    item: itemMap.get(ingredient.item),
-  })),
-  product: recipe.product.map(product => ({ ...product, item: itemMap.get(product.item) })),
-})) as Recipe[];
-
-const recipeMap = new Map(processedRecipes.map(recipe => [recipe.id, recipe]));
-
-export const {
-  buildingMap: buildings,
-  recipeMap: recipes,
-  itemMap: items,
-} = { buildingMap, itemMap, recipeMap };
+export { buildings, recipes, items };
