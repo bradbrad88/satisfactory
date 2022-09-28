@@ -1,6 +1,13 @@
-import { createSlice } from "@reduxjs/toolkit";
-// import type { PayloadAction } from "@reduxjs/toolkit";
-import type { RootShape } from "app/store";
+import { nanoid, PayloadAction } from "@reduxjs/toolkit";
+import type { EntityState } from "./entities";
+import { RootState } from "app/store";
+import productionStepsReducers from "./productionSteps";
+
+interface EdgeInit {
+  input: string;
+  output: string;
+  qty: number;
+}
 
 interface Edge {
   input: string;
@@ -10,15 +17,15 @@ interface Edge {
   dependant?: "input" | "output";
 }
 
-let initialState: RootShape<Edge> = {
-  byId: {},
-  allIds: [],
+export const edgeState = {
+  byId: {} as { [key: string]: Edge },
+  allIds: [] as string[],
 };
 
-const slice = createSlice({
-  name: "edges",
-  initialState,
-  reducers: {},
-});
+export const reducers = {
+  createEdge: (state: EntityState, action: { payload: EdgeInit }) => {},
+};
 
-export default slice.reducer;
+export default {
+  ...reducers,
+};

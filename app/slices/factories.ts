@@ -1,7 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
-import type { PayloadAction } from "@reduxjs/toolkit";
-import type { RootState, RootShape } from "app/store";
-import { createProductionStep, destroyProductionStep } from "./productionSteps";
+import { nanoid, PayloadAction } from "@reduxjs/toolkit";
+import type { EntityState } from "./entities";
+import { RootState } from "app/store";
+import productionStepsReducers from "./productionSteps";
 
 interface Coordinate {
   x: number;
@@ -9,59 +9,75 @@ interface Coordinate {
 }
 
 interface FactoryInit {
-  id: string;
   name: string;
-  location?: Coordinate;
-  productionSteps?: string[];
+  // venture: string;
 }
 
-interface Factory extends FactoryInit {
+interface Factory {
+  id: string;
+  name: string;
   location: Coordinate;
   productionSteps: string[];
 }
 
-let initialState: RootShape<Factory> = {
-  byId: {},
-  allIds: [],
+export const factoryState = {
+  factories: {
+    byId: {} as { [key: string]: Factory },
+    allIds: [] as string[],
+    active: null as string | null,
+  },
 };
 
-if (typeof window !== "undefined") {
-  initialState = JSON.parse(localStorage.getItem("factory") as string) || {
-    byId: {},
-    allIds: [],
-  };
-}
-
-const slice = createSlice({
-  name: "factories",
-  initialState,
-  reducers: {
-    createFactory(state, action: PayloadAction<FactoryInit>) {
-      state.allIds.push(action.payload.id);
-      const transformFactory = (factory: FactoryInit) => {
-        if (!factory.location) factory.location = { x: 0, y: 0 };
-        if (!factory.productionSteps) factory.productionSteps = [];
-        return factory as Factory;
+export const reducers = {
+  createFactory: {
+    reducer: (state: EntityState, action: PayloadAction<Factory>) => {
+      const { id } = action.payload;
+      const venture = state.ventures.active;
+      if (!venture) return;
+      state.factories.allIds.push(id);
+      state.factories.byId[id] = action.payload;
+      state.ventures.byId[venture].factories.push(id);
+    },
+    prepare: (factory: FactoryInit) => {
+      const id = nanoid();
+      const location = { x: 0, y: 0 };
+      const productionSteps = [] as string[];
+      return {
+        payload: { ...factory, id, location, productionSteps },
       };
-      const factory = transformFactory(action.payload);
-      state.byId[action.payload.id] = factory;
     },
   },
-  extraReducers(builder) {
-    builder.addCase(createProductionStep, (state, action) => {
-      const { factory, id } = action.payload;
-      state.byId[factory].productionSteps.push(id);
-    });
-    builder.addCase(destroyProductionStep, (state, action) => {
-      const { factory, id } = action.payload;
-      const idx = state.byId[factory].productionSteps.findIndex(prodStep => prodStep === id);
-      state.byId[factory].productionSteps.splice(idx, 1);
+  setActiveFactory: (state: EntityState, action: PayloadAction<string | null>) => {
+    state.factories.active = action.payload;
+  },
+  destroyFactroy: (state: EntityState, action: PayloadAction<string>) => {
+    const id = action.payload;
+
+    const { productionSteps: ids } = state.factories.byId[id];
+    productionStepsReducers.destroyProductionSteps(state, { payload: ids });
+
+    const idx = state.factories.allIds.indexOf(id);
+    state.factories.allIds.splice(idx, 1);
+
+    delete state.factories.byId[id];
+  },
+  destroyFactories: (state: EntityState, action: { payload: string[] }) => {
+    action.payload.forEach(id => {
+      reducers.destroyFactroy(state, { payload: id, type: "" });
     });
   },
-});
+};
 
-export const { createFactory } = slice.actions;
+export default {
+  ...reducers,
+};
 
-export const selectFactories = (state: RootState) => state.factories;
+export const getFactories = (state: RootState) => {
+  const venture = state.entities.ventures.active;
+  if (!venture) return [];
+  return state.entities.ventures.byId[venture].factories;
+};
 
-export default slice.reducer;
+export const getFactory = (factory: string) => {
+  return (state: RootState) => state.entities.factories.byId[factory];
+};
