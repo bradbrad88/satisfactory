@@ -13,7 +13,7 @@ const Button = forwardRef(
     ref: LegacyRef<HTMLButtonElement>
   ) => {
     const colourMap = {
-      green: "bg-green-600",
+      green: "bg-green-700",
       orange: "bg-orange-600",
       red: "bg-red-500",
       white: "bg-white",
@@ -26,7 +26,7 @@ const Button = forwardRef(
     const textStyle = textMap[textColour];
     return (
       <button
-        className={`text-xl font-bold text-white rounded-md p-3 w-full ${colourStyle} ${textStyle}`}
+        className={`text-base font-bold text-white rounded-md p-2 w-full ${colourStyle} ${textStyle}`}
         onClick={onClick}
         ref={ref}
       >
