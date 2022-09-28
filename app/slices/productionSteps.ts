@@ -1,4 +1,5 @@
-import type { PayloadAction } from "@reduxjs/toolkit";
+import { nanoid } from "@reduxjs/toolkit";
+import { RootState } from "app/store";
 import type { EntityState } from "./entities";
 
 interface Ingredient {
@@ -7,12 +8,7 @@ interface Ingredient {
 }
 
 interface ProductionStepInit {
-  id: string;
   product: Ingredient;
-  byProducts?: Ingredient[];
-  requiredInputs?: Ingredient[];
-  edges?: string[];
-  factory: string;
 }
 
 export interface ProductionStep {
@@ -22,7 +18,6 @@ export interface ProductionStep {
   byProducts: Ingredient[];
   requiredInputs: Ingredient[];
   edges: string[];
-  factory: string;
 }
 
 export const productionStepState = {
@@ -30,17 +25,23 @@ export const productionStepState = {
 };
 
 const reducers = {
-  createProductionStep: (state: EntityState, action: PayloadAction<ProductionStepInit>) => {
-    const transformProductionStep = (productionStep: ProductionStepInit) => {
-      if (!productionStep.requiredInputs) productionStep.requiredInputs = [];
-      if (!productionStep.byProducts) productionStep.byProducts = [];
-      if (!productionStep.edges) productionStep.edges = [];
-      return productionStep as ProductionStep;
-    };
-    const productionStep = transformProductionStep(action.payload);
-    const { id } = productionStep;
-    state.productionSteps.allIds.push(id);
-    state.productionSteps.byId[id] = productionStep;
+  createProductionStep: {
+    reducer: (state: EntityState, action: { payload: ProductionStep }) => {
+      const { id } = action.payload;
+      const factory = state.factories.active;
+      if (!factory) return;
+      state.factories.byId[factory].productionSteps.push(id);
+      state.productionSteps.allIds.push(id);
+      state.productionSteps.byId[id] = action.payload;
+    },
+    prepare: (props: ProductionStepInit) => {
+      const { product } = props;
+      const id = nanoid();
+      const byProducts = [] as Ingredient[];
+      const requiredInputs = [] as Ingredient[];
+      const edges = [] as string[];
+      return { payload: { id, product, edges, byProducts, requiredInputs } as ProductionStep };
+    },
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
@@ -54,6 +55,18 @@ const reducers = {
       reducers.destroyProductionStep(state, { payload: id });
     });
   },
+};
+
+export const getProductionSteps = (state: RootState) => {
+  const factory = state.entities.factories.active;
+  if (!factory) return [];
+  return state.entities.factories.byId[factory].productionSteps;
+};
+
+export const getProductionStep = (id: string) => {
+  return (state: RootState) => {
+    return state.entities.productionSteps.byId[id];
+  };
 };
 
 export default {
