@@ -13,13 +13,8 @@ const NetworkToolbar = ({ toggleFactories }: Proptypes) => {
   const factories = useAppSelector(getFactories);
   const navHome = () => {};
 
-  const newFactory = () => {
-    const name = `Factory${(factories.length + 1).toString().padStart(2, "0")}`;
-    dispatch(action.createFactory({ name }));
-  };
-
-  const destroyFactories = () => {
-    dispatch(action.destroyFactories(factories));
+  const destroyVenture = () => {
+    dispatch(action.destroyVenture());
   };
 
   return (
@@ -33,8 +28,8 @@ const NetworkToolbar = ({ toggleFactories }: Proptypes) => {
         <Button onClick={toggleFactories} colour="white" textColour="black">
           Factories
         </Button>
-        <Button onClick={newFactory} colour="white" textColour="black">
-          Destroy Factory
+        <Button onClick={destroyVenture} colour="white" textColour="black">
+          Delete Venture
         </Button>
       </div>
     </div>
