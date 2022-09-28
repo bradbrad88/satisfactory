@@ -36,7 +36,7 @@ const FactoryList = () => {
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-zinc-900 border-r-2 border-zinc-300 gap-3 p-3">
+    <div className="flex flex-col h-full w-full bg-zinc-900 gap-3 p-3">
       <Button onClick={newFactory}>New Factory</Button>
 
       {renderFactories()}
