@@ -1,54 +1,71 @@
 import buildingsData, { Building } from "./buildings";
 import recipesData, { Recipe } from "./recipes";
 import itemsData, { ItemWithoutRecipe } from "./items";
-import { RootShape } from "app/store";
+// import { RootShape } from "app/store";
+
+interface RootShape<T> {
+  map: { [key: string]: T };
+  array: T[];
+  produceItems?: T[];
+}
 
 interface Item extends ItemWithoutRecipe {
-  recipes: string[];
+  recipes: Recipe[];
 }
 
 export type { Building, Item, Recipe };
 
 // Transform buildings to root shape
 const buildings = buildingsData.reduce(
-  (map: RootShape<Building>, building: Building) => {
+  (buildings: RootShape<Building>, building: Building) => {
     const { id } = building;
-    map.allIds.push(id);
-    map.byId[id] = building;
-    return map;
+    buildings.array.push(building);
+    buildings.map[id] = building;
+    return buildings;
   },
-  { byId: {}, allIds: [] }
+  { map: {}, array: [] }
 );
 
 // Transform recipes to root shape
 const recipes = recipesData.reduce(
-  (map: RootShape<Recipe>, recipe: Recipe) => {
+  (recipes: RootShape<Recipe>, recipe: Recipe) => {
     const { id } = recipe;
-    map.allIds.push(id);
-    map.byId[id] = recipe;
-    return map;
+    recipes.array.push(recipe);
+    recipes.map[id] = recipe;
+    return recipes;
   },
   {
-    byId: {},
-    allIds: [],
+    map: {},
+    array: [],
   }
 );
 
 // Transform items to root shape, apply empty array so they are ready to receive recipes
 const items = itemsData.reduce(
-  (map: RootShape<Item>, item: ItemWithoutRecipe) => {
+  (items: RootShape<Item>, item: ItemWithoutRecipe) => {
     const { id } = item;
-    map.allIds.push(id);
-    map.byId[id] = { ...item, recipes: [] };
-    return map;
+    const newItem = { ...item, recipes: [] };
+    items.array.push(newItem);
+    items.map[id] = newItem;
+    return items;
   },
-  { byId: {}, allIds: [] }
+  { map: {}, array: [], produceItems: [] }
 );
 
+items.array.sort((a, b) => {
+  return a.name.localeCompare(b.name);
+});
+
+items.produceItems = items.array.filter(item => {
+  return recipes.array.some(recipe =>
+    recipe.product.some(recipeItem => recipeItem.item === item.id)
+  );
+});
+
 // Attach recipes to items where they are the product of the recipe
-recipes.allIds.forEach(recipeId => {
-  recipes.byId[recipeId].product.forEach(ingredient => {
-    items.byId[ingredient.item].recipes.push(recipeId);
+recipes.array.forEach(recipe => {
+  recipes.map[recipe.id].product.forEach(ingredient => {
+    items.map[ingredient.item].recipes.push(recipe);
   });
 });
 
