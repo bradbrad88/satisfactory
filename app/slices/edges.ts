@@ -18,8 +18,10 @@ interface Edge {
 }
 
 export const edgeState = {
-  byId: {} as { [key: string]: Edge },
-  allIds: [] as string[],
+  edges: {
+    byId: {} as { [key: string]: Edge },
+    allIds: [] as string[],
+  },
 };
 
 export const reducers = {
