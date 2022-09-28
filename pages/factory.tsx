@@ -1,34 +1,40 @@
 import { useState, useEffect } from "react";
-import Map from "components/features/Map";
-import "components/features/NetworkMap";
-import OverlayToolbar from "components/features/OverlayToolbar";
-import FactoryToolbar from "components/features/FactoryToolbar";
-import ProductionStepList from "components/features/ProductionStepLists";
-import { useAppSelector } from "app/hooks";
-import { getActiveFactory } from "app/slices/factories";
 import { useRouter } from "next/router";
+import { useAppDispatch, useAppSelector } from "app/hooks";
+import { action } from "app/slices/entities";
+import { getActiveFactory } from "app/slices/factories";
+
+import Map from "components/features/Map";
+import OverlayToolbar from "components/features/OverlayToolbar";
+import FactoryToolbar from "components/features/factory/FactoryToolbar";
+import ItemLookup from "components/features/ItemLookup";
+import FactoryMap from "components/features/factory/FactoryMap";
 
 const panelOptions = {
-  productionSteps: "PRODUCTION_STEPS",
+  itemLookup: "ITEM_LOOKUP",
 };
 
 const Factory = () => {
-  const [leftPanel, setLeftPanel] = useState(panelOptions.productionSteps);
+  const [leftPanel, setLeftPanel] = useState(panelOptions.itemLookup);
   const activeFactory = useAppSelector(getActiveFactory);
   const router = useRouter();
+  const dispatch = useAppDispatch();
   useEffect(() => {
     if (!activeFactory) router.replace("/network");
   });
-  const toggleProductionSteps = () => {
-    if (leftPanel === panelOptions.productionSteps) return setLeftPanel("");
-    setLeftPanel(panelOptions.productionSteps);
+  const toggleItemPanel = () => {
+    if (leftPanel === panelOptions.itemLookup) return setLeftPanel("");
+    setLeftPanel(panelOptions.itemLookup);
+  };
+
+  const onItemSelect = (item: string) => {
+    dispatch(action.createProductionStep({ product: { item, qty: 1 } }));
   };
 
   const getLeftPanel = () => {
     switch (leftPanel) {
-      case panelOptions.productionSteps:
-        return <ProductionStepList />;
-
+      case panelOptions.itemLookup:
+        return <ItemLookup onItemSelect={onItemSelect} />;
       default:
         return null;
     }
@@ -36,11 +42,11 @@ const Factory = () => {
   return (
     <div className="bg-zinc-900 h-screen ">
       <Map>
-        <div>Production Steps</div>
+        <FactoryMap />
       </Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}
-        bottomPanel={<FactoryToolbar toggleProductionSteps={toggleProductionSteps} />}
+        bottomPanel={<FactoryToolbar toggleItemPanel={toggleItemPanel} />}
       />
     </div>
   );

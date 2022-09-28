@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import Map from "components/features/Map";
-import NetworkMap from "components/features/NetworkMap";
-import "components/features/NetworkMap";
-import FactoryList from "components/features/FactoryList";
-import OverlayToolbar from "components/features/OverlayToolbar";
-import NetworkToolbar from "components/features/NetworkToolbar";
+import { useRouter } from "next/router";
 import { useAppSelector } from "app/hooks";
 import { getActiveVenture } from "app/slices/ventures";
-import { useRouter } from "next/router";
+import Map from "components/features/Map";
+import NetworkMap from "components/features/network/NetworkMap";
+import FactoryList from "components/features/factory/FactoryList";
+import OverlayToolbar from "components/features/OverlayToolbar";
+import NetworkToolbar from "components/features/network/NetworkToolbar";
 
 const panelOptions = {
   factories: "FACTORIES",
@@ -30,7 +29,6 @@ const Network = () => {
     switch (leftPanel) {
       case panelOptions.factories:
         return <FactoryList />;
-
       default:
         return null;
     }
