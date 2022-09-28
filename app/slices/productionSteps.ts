@@ -1,6 +1,7 @@
 import { nanoid } from "@reduxjs/toolkit";
 import { RootState } from "app/store";
 import type { EntityState } from "./entities";
+import { items, recipes } from "data";
 
 interface Ingredient {
   item: string;
@@ -13,7 +14,7 @@ interface ProductionStepInit {
 
 export interface ProductionStep {
   id: string;
-  recipe?: string;
+  recipe: string;
   product: Ingredient;
   byProducts: Ingredient[];
   requiredInputs: Ingredient[];
@@ -37,11 +38,32 @@ const reducers = {
     prepare: (props: ProductionStepInit) => {
       const { product } = props;
       const id = nanoid();
+      const itemData = items.map[product.item];
+      // Pick first non-alternate recipe as default
+      let recipe = itemData.recipes.filter(recipe => !recipe.alternate)[0]?.id;
+      // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
+      if (!recipe) recipe = itemData.recipes[0]?.id;
       const byProducts = [] as Ingredient[];
       const requiredInputs = [] as Ingredient[];
       const edges = [] as string[];
-      return { payload: { id, product, edges, byProducts, requiredInputs } as ProductionStep };
+      return {
+        payload: { id, product, edges, byProducts, requiredInputs, recipe } as ProductionStep,
+      };
     },
+  },
+  updateRecipe: (
+    state: EntityState,
+    action: { payload: { productionStep: string; recipe: string } }
+  ) => {
+    const { productionStep, recipe } = action.payload;
+    state.productionSteps.byId[productionStep].recipe = recipe;
+  },
+  updateProductQty: (
+    state: EntityState,
+    action: { payload: { productionStep: string; qty: number } }
+  ) => {
+    const { productionStep, qty } = action.payload;
+    state.productionSteps.byId[productionStep].product.qty = qty;
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
