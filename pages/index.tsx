@@ -1,18 +1,12 @@
-import type { NextPage } from "next";
-import Head from "next/head";
-import Image from "next/image";
+import VentureList from "components/features/VentureList";
 
-const Home: NextPage = () => {
+const Home = () => {
   return (
-    <div className="flex h-screen flex-col items-center justify-center">
-      <Head>
-        <title>Satisfactory Planner</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className="h-full w-full">
-        <h1>Satisfactory Planner</h1>
-      </main>
-    </div>
+    <main className="h-screen flex justify-center sm:items-center">
+      <div className="max-h-[61.8%] min-h-[600px] h-full max-w-[700px] w-full">
+        <VentureList />
+      </div>
+    </main>
   );
 };
 
