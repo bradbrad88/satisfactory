@@ -78,6 +78,10 @@ export const getFactories = (state: RootState) => {
   return state.entities.ventures.byId[venture].factories;
 };
 
+export const getActiveFactory = (state: RootState) => {
+  return state.entities.factories.active;
+};
+
 export const getFactory = (factory: string) => {
   return (state: RootState) => state.entities.factories.byId[factory];
 };

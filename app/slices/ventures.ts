@@ -1,4 +1,5 @@
 import { nanoid, PayloadAction } from "@reduxjs/toolkit";
+import { RootState } from "app/store";
 import type { EntityState } from "./entities";
 import factories from "./factories";
 
@@ -41,16 +42,20 @@ const reducers = {
   },
 
   // DELETE VENTURES
-  deleteVenture: (state: EntityState, action: PayloadAction<string>) => {
-    const id = action.payload;
-    // Delete all ventures
-
+  destroyVenture: (state: EntityState, action: PayloadAction<string | undefined>) => {
+    const id = action.payload || state.ventures.active;
+    if (!id) return;
     const venture = state.ventures.byId[id];
     factories.destroyFactories(state, { payload: venture.factories });
     const idx = state.ventures.allIds.indexOf(id);
     state.ventures.allIds.splice(idx, 1);
     delete state.ventures.byId[id];
+    if (state.ventures.active === id) state.ventures.active = null;
   },
+};
+
+export const getActiveVenture = (state: RootState) => {
+  return state.entities.ventures.active;
 };
 
 export default {
