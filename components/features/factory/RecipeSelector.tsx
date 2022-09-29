@@ -71,13 +71,13 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
   return (
     <div ref={ref} className="relative">
       <button
-        className="bg-transparent hover:bg-yellow-500 border-[1px] border-yellow-400 rounded-md p-1"
+        className="bg-transparent hover:bg-amber-300 border-[1px] hover:bg-opacity-30 border-amber-500 rounded-md p-1 transition-colors"
         onClick={() => setHidden(!hidden)}
       >
         Recipes
       </button>
       {!hidden && (
-        <div className="absolute left-full bottom-0 bg-rose-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md">
+        <div className="absolute left-full bottom-1/2 ml-2 bg-cyan-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md">
           {renderRecipes()}
         </div>
       )}
