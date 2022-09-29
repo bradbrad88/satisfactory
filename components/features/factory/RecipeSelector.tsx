@@ -77,7 +77,7 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
         Recipes
       </button>
       {!hidden && (
-        <div className="absolute left-full bottom-1/2 ml-2 bg-cyan-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md">
+        <div className="absolute left-full bottom-1/2 ml-2 bg-cyan-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md z-10">
           {renderRecipes()}
         </div>
       )}
