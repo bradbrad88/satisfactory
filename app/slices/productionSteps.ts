@@ -19,6 +19,7 @@ export interface ProductionStep {
   byProducts: Ingredient[];
   requiredInputs: Ingredient[];
   edges: string[];
+  factory: string;
 }
 
 export const productionStepState = {
@@ -32,6 +33,7 @@ const reducers = {
       const factory = state.factories.active;
       if (!factory) return;
       state.factories.byId[factory].productionSteps.push(id);
+      action.payload.factory = factory;
       state.productionSteps.allIds.push(id);
       state.productionSteps.byId[id] = action.payload;
     },
@@ -46,6 +48,7 @@ const reducers = {
       const byProducts = [] as Ingredient[];
       const requiredInputs = [] as Ingredient[];
       const edges = [] as string[];
+
       return {
         payload: { id, product, edges, byProducts, requiredInputs, recipe } as ProductionStep,
       };
@@ -67,9 +70,12 @@ const reducers = {
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
+    const factory = state.productionSteps.byId[id].factory;
     const idx = state.productionSteps.allIds.indexOf(id);
     delete state.productionSteps.byId[id];
     state.productionSteps.allIds.splice(idx, 1);
+    const facIdx = state.factories.byId[factory].productionSteps.indexOf(id);
+    state.factories.byId[factory].productionSteps.splice(facIdx, 1);
   },
   destroyProductionSteps: (state: EntityState, action: { payload: string[] }) => {
     const ids = action.payload;
