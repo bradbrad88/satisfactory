@@ -18,6 +18,7 @@ interface Factory {
   name: string;
   location: Coordinate;
   productionSteps: string[];
+  venture: string;
 }
 
 export const factoryState = {
@@ -34,6 +35,7 @@ export const reducers = {
       const { id } = action.payload;
       const venture = state.ventures.active;
       if (!venture) return;
+      action.payload.venture = venture;
       state.factories.allIds.push(id);
       state.factories.byId[id] = action.payload;
       state.ventures.byId[venture].factories.push(id);
@@ -50,20 +52,33 @@ export const reducers = {
   setActiveFactory: (state: EntityState, action: PayloadAction<string | null>) => {
     state.factories.active = action.payload;
   },
-  destroyFactroy: (state: EntityState, action: PayloadAction<string>) => {
-    const id = action.payload;
-
+  destroyFactory: (state: EntityState, action: PayloadAction<string | undefined>) => {
+    // Get factory id to delete
+    const id = action.payload || state.factories.active;
+    if (!id) return;
+    const factory = state.factories.byId[id];
+    // Get associated production steps to be removed as well
     const { productionSteps: ids } = state.factories.byId[id];
     productionStepsReducers.destroyProductionSteps(state, { payload: ids });
 
+    // Find the index of factory id in allIds[] so it can be deleted
     const idx = state.factories.allIds.indexOf(id);
     state.factories.allIds.splice(idx, 1);
 
+    // Delete from byId{}
     delete state.factories.byId[id];
+
+    // Remove from venture.factories
+    const ventureFactories = state.ventures.byId[factory.venture].factories;
+    const venIdx = ventureFactories.indexOf(id);
+    ventureFactories.splice(venIdx, 1);
+
+    // If factory was active, then remove it from factories.active
+    if (id === state.factories.active) state.factories.active = null;
   },
   destroyFactories: (state: EntityState, action: { payload: string[] }) => {
     action.payload.forEach(id => {
-      reducers.destroyFactroy(state, { payload: id, type: "" });
+      reducers.destroyFactory(state, { payload: id, type: "" });
     });
   },
 };
