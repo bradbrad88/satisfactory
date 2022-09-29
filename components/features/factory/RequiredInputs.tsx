@@ -17,7 +17,7 @@ const Ingredient = ({ ingredient, ratio }: { ingredient: Ingredient; ratio: numb
 const RequiredInputs = ({ productionStep }: Proptypes) => {
   const recipe = recipes.map[productionStep.recipe];
   const product = recipe.product.find(product => product.item === productionStep.product.item);
-  const ratio = productionStep.product.qty / (product?.amount || 1);
+  const ratio = productionStep.product.amount / (product?.amount || 1);
   const renderIngredients = () =>
     recipe.ingredients.map(ingredient => (
       <Ingredient

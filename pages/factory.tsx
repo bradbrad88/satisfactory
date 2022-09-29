@@ -28,7 +28,7 @@ const Factory = () => {
   };
 
   const onItemSelect = (item: string) => {
-    dispatch(action.createProductionStep({ product: { item, qty: 1 } }));
+    dispatch(action.createProductionStep({ product: { item, amount: 1 } }));
   };
 
   const getLeftPanel = () => {

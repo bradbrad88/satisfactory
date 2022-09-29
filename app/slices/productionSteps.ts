@@ -3,10 +3,7 @@ import { RootState } from "app/store";
 import type { EntityState } from "./entities";
 import { items, recipes } from "data";
 
-interface Ingredient {
-  item: string;
-  qty: number;
-}
+import type { Ingredient } from "data/recipes";
 
 interface ProductionStepInit {
   product: Ingredient;
@@ -63,10 +60,10 @@ const reducers = {
   },
   updateProductQty: (
     state: EntityState,
-    action: { payload: { productionStep: string; qty: number } }
+    action: { payload: { productionStep: string; amount: number } }
   ) => {
-    const { productionStep, qty } = action.payload;
-    state.productionSteps.byId[productionStep].product.qty = qty;
+    const { productionStep, amount } = action.payload;
+    state.productionSteps.byId[productionStep].product.amount = amount;
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;

@@ -12,12 +12,12 @@ const QtySelector = ({ productionStep }: Proptypes) => {
   const [edit, setEdit] = useState(true);
   const dispatch = useAppDispatch();
 
-  const quantity = productionStep.product.qty.toFixed(4);
+  const quantity = productionStep.product.amount.toFixed(4);
 
   const onSubmit = (value: string) => {
-    const qty = parseFloat(value);
-    if (qty.toFixed(4) === quantity) return setEdit(false);
-    dispatch(action.updateProductQty({ productionStep: productionStep.id, qty }));
+    const amount = parseFloat(value);
+    if (amount.toFixed(4) === quantity) return setEdit(false);
+    dispatch(action.updateProductQty({ productionStep: productionStep.id, amount }));
     setEdit(false);
   };
 
@@ -36,7 +36,7 @@ const QtySelector = ({ productionStep }: Proptypes) => {
       {edit ? (
         <div onKeyDown={onKeyDown}>
           <Input
-            value={productionStep.product.qty + ""}
+            value={productionStep.product.amount + ""}
             submit={onSubmit}
             submitOnBlur={true}
           />
