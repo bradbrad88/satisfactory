@@ -21,7 +21,7 @@ const DeleteButton = ({ onDelete }: Proptypes) => {
   };
   return (
     <button
-      className="bg-transparent hover:bg-red-500 border-[1px] border-red-600 rounded-md p-1"
+      className="bg-transparent hover:bg-red-500 border-[1px] border-red-600 rounded-md p-1 px-3"
       onClick={onClick}
     >
       {confirm ? "Confirm" : "Delete"}

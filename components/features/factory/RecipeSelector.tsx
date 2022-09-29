@@ -71,7 +71,7 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
   return (
     <div ref={ref} className="relative">
       <button
-        className="bg-transparent hover:bg-amber-300 border-[1px] hover:bg-opacity-30 border-amber-500 rounded-md p-1 transition-colors"
+        className="bg-transparent hover:bg-amber-300 border-[1px] hover:bg-opacity-30 border-amber-500 rounded-md p-1 px-3 transition-colors"
         onClick={() => setHidden(!hidden)}
       >
         Recipes
