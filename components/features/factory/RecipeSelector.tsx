@@ -1,7 +1,7 @@
 import { useAppDispatch } from "app/hooks";
 import { action } from "app/slices/entities";
 import { items, recipes, buildings } from "data";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Proptypes {
   productionStep: string;
@@ -21,14 +21,14 @@ const Recipe = ({
   const dispatch = useAppDispatch();
   const recipe = recipes.map[id];
   const styles: React.CSSProperties = {
-    borderColor: selected ? "yellow" : undefined,
+    borderColor: selected ? "goldenrod" : undefined,
   };
   const onClick = () => {
     dispatch(action.updateRecipe({ productionStep, recipe: recipe.id }));
   };
   return (
     <div
-      className="border-zinc-300 border-2 rounded-lg p-2 hover:shadow-md hover:shadow-zinc-400 shadow-lg cursor-pointer min-w-[100px]"
+      className="border-zinc-300 border-2 bg-zinc-800 rounded-lg p-2 hover:shadow-md hover:shadow-zinc-400 shadow-lg cursor-pointer min-w-[100px]"
       style={styles}
       onClick={onClick}
     >
@@ -39,6 +39,22 @@ const Recipe = ({
 
 const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
   const [hidden, setHidden] = useState(true);
+  const ref = useRef<HTMLDivElement>(null);
+  // Performance optimisation - used to prevent unnecessary searching of arrays for every production step on every click.
+  const hiddenRef = useRef(hidden);
+  hiddenRef.current = hidden;
+
+  useEffect(() => {
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, []);
+
+  const onClick = (e: MouseEvent) => {
+    if (hiddenRef.current) return;
+    // Don't hide the recipe list if click originated from
+    if (e.composedPath().includes(ref.current!)) return;
+    setHidden(true);
+  };
 
   const recipes = items.map[item]?.recipes;
   const renderRecipes = () => {
@@ -53,15 +69,17 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
   };
 
   return (
-    <div>
-      <h2
-        className="font-bold cursor-pointer hover:text-yellow-200"
+    <div ref={ref} className="relative">
+      <button
+        className="bg-transparent hover:bg-yellow-500 border-[1px] border-yellow-400 rounded-md p-1"
         onClick={() => setHidden(!hidden)}
       >
         Recipes
-      </h2>
+      </button>
       {!hidden && (
-        <div className="grid auto-cols-min grid-flow-col gap-3">{renderRecipes()}</div>
+        <div className="absolute left-full bottom-0 bg-rose-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md">
+          {renderRecipes()}
+        </div>
       )}
     </div>
   );
