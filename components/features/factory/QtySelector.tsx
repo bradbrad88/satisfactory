@@ -9,7 +9,7 @@ interface Proptypes {
 }
 
 const QtySelector = ({ productionStep }: Proptypes) => {
-  const [edit, setEdit] = useState(true);
+  const [edit, setEdit] = useState(false);
   const dispatch = useAppDispatch();
 
   const quantity = productionStep.product.amount.toFixed(4);
@@ -31,7 +31,7 @@ const QtySelector = ({ productionStep }: Proptypes) => {
     <div onPointerDown={e => e.stopPropagation()} className="">
       {/* Edit mode vs Read only */}
       {edit ? (
-        <div onKeyDown={onKeyDown}>
+        <div onKeyDown={onKeyDown} className="w-24">
           <Input
             value={productionStep.product.amount + ""}
             submit={onSubmit}

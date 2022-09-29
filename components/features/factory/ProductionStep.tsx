@@ -21,7 +21,7 @@ const ProductionStep = ({ id }: Proptypes) => {
   };
 
   return (
-    <div className="relative grid grid-flow-row min-w-[300px] border-zinc-300 border-2 rounded-lg overflow-hidde p-3 bg-zinc-700 text-white gap-3">
+    <div className="relative grid grid-flow-row h-fit min-w-[300px] border-zinc-300 border-2 rounded-lg bg-zinc-700 text-white gap-3 p-3">
       <div className="flex h-fit justify-between gap-5">
         {/* Toolbar */}
         <RecipeSelector
