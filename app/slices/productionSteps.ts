@@ -1,7 +1,7 @@
 import { nanoid } from "@reduxjs/toolkit";
 import { RootState } from "app/store";
 import type { EntityState } from "./entities";
-import { items, recipes } from "data";
+import { items, recipes, buildings } from "data";
 
 import type { Ingredient } from "data/recipes";
 
@@ -12,6 +12,7 @@ interface ProductionStepInit {
 export interface ProductionStep {
   id: string;
   recipe: string;
+  buildingCount: number;
   product: Ingredient;
   byProducts: Ingredient[];
   requiredInputs: Ingredient[];
@@ -33,6 +34,7 @@ const reducers = {
       action.payload.factory = factory;
       state.productionSteps.allIds.push(id);
       state.productionSteps.byId[id] = action.payload;
+      reducers.optimiseBuidingCount(state, { payload: id });
     },
     prepare: (props: ProductionStepInit) => {
       const { product } = props;
@@ -57,6 +59,7 @@ const reducers = {
   ) => {
     const { productionStep, recipe } = action.payload;
     state.productionSteps.byId[productionStep].recipe = recipe;
+    reducers.optimiseBuidingCount(state, { payload: productionStep });
   },
   updateProductQty: (
     state: EntityState,
@@ -64,6 +67,24 @@ const reducers = {
   ) => {
     const { productionStep, amount } = action.payload;
     state.productionSteps.byId[productionStep].product.amount = amount;
+    reducers.optimiseBuidingCount(state, { payload: productionStep });
+  },
+  updateBuildingCount: (
+    state: EntityState,
+    action: { payload: { productionStep: string; count: number } }
+  ) => {
+    const { productionStep, count } = action.payload;
+    state.productionSteps.byId[productionStep].buildingCount = count;
+  },
+  optimiseBuidingCount: (state: EntityState, action: { payload: string }) => {
+    const buildingStep = state.productionSteps.byId[action.payload];
+    const recipe = recipes.map[buildingStep.recipe];
+    const recipeItem = recipe.product.find(
+      product => product.item === buildingStep.product.item
+    );
+    if (!recipeItem) return;
+    const ratio = buildingStep.product.amount / recipeItem.amount;
+    buildingStep.buildingCount = Math.ceil(ratio);
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
@@ -106,6 +127,26 @@ export const getByProducts = (id: string) => {
     if (!product) return null;
     const ratio = prodStep.product.amount / product.amount;
     return byProducts.map(product => ({ ...product, amount: product.amount * ratio }));
+  };
+};
+
+export const getBuildingDetails = (id: string) => {
+  return (state: RootState) => {
+    const prodStep = state.entities.productionSteps.byId[id];
+    if (!prodStep) return null;
+    const recipe = recipes.map[prodStep.recipe];
+    if (!recipe) return null;
+    const building = buildings.map[recipe.building];
+
+    const recipeProduct = recipe.product.find(
+      product => product.item === prodStep.product.item
+    );
+    if (!recipeProduct) return;
+    const count = prodStep.buildingCount;
+    // const count = prodStep.product.amount / recipeProduct.amount;
+    const overclock = (100 * prodStep.product.amount) / (count * recipeProduct.amount);
+    const power = building.power * count * Math.pow(overclock / 100, building.powerExponent);
+    return { building: building.name, power, count, overclock };
   };
 };
 
