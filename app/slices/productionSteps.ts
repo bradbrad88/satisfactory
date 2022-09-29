@@ -94,6 +94,21 @@ export const getProductionStep = (id: string) => {
   };
 };
 
+export const getByProducts = (id: string) => {
+  return (state: RootState) => {
+    const prodStep = state.entities.productionSteps.byId[id];
+    const recipeId = prodStep.recipe;
+    const recipe = recipes.map[recipeId];
+    if (!recipe) return null;
+    const byProducts = [...recipe.product];
+    const idx = byProducts.findIndex(recipe => recipe.item === prodStep.product.item);
+    const product = byProducts.splice(idx, 1)[0];
+    if (!product) return null;
+    const ratio = prodStep.product.amount / product.amount;
+    return byProducts.map(product => ({ ...product, amount: product.amount * ratio }));
+  };
+};
+
 export default {
   ...reducers,
 };
