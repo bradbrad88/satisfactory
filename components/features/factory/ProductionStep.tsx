@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import { action } from "app/slices/entities";
 import { getProductionStep } from "app/slices/productionSteps";
+import { items } from "data";
 import DeleteButton from "components/common/DeleteButton";
 import RecipeSelector from "./RecipeSelector";
 import RequiredInputs from "./RequiredInputs";
@@ -21,13 +22,14 @@ const ProductionStep = ({ id }: Proptypes) => {
 
   return (
     <div className="relative grid grid-flow-row min-w-[300px] border-zinc-300 border-2 rounded-lg overflow-hidde p-3 bg-zinc-700 text-white gap-3">
-      <div className="flex h-fit justify-between gap-3">
+      <div className="flex h-fit justify-between gap-5">
         {/* Toolbar */}
         <RecipeSelector
           productionStep={productionStep.id}
           item={productionStep.product.item}
           selected={productionStep.recipe}
         />
+        <h2 className="font-bold text-lg">{items.map[productionStep.product.item].name}</h2>
         <DeleteButton onDelete={onDelete} />
       </div>
 
