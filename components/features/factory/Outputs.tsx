@@ -1,5 +1,6 @@
 import { useAppSelector } from "app/hooks";
 import { getProductionStep } from "app/slices/productionSteps";
+import Container from "components/common/Container";
 import { items } from "data";
 import ByProducts from "./ByProducts";
 import QtySelector from "./QtySelector";
@@ -18,10 +19,11 @@ const Outputs = ({ productionStepId }: Proptypes) => {
         {/* Product */}
         <div className="">
           <h2>Product</h2>
-          <div className="min-w-[100px] border-2 border-zinc-300 rounded-md p-2">
+
+          <Container selected={true}>
             <h2 className="font-bold">{items.map[productionStep.product.item].name}</h2>
             <QtySelector productionStep={productionStep} />
-          </div>
+          </Container>
         </div>
         <ByProducts productionStep={productionStepId} />
       </div>

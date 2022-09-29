@@ -1,5 +1,6 @@
 import { useAppDispatch } from "app/hooks";
 import { action } from "app/slices/entities";
+import Container from "components/common/Container";
 import { items, recipes, buildings } from "data";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,13 +28,11 @@ const Recipe = ({
     dispatch(action.updateRecipe({ productionStep, recipe: recipe.id }));
   };
   return (
-    <div
-      className="border-zinc-300 border-2 bg-zinc-800 rounded-lg p-2 hover:shadow-md hover:shadow-zinc-400 shadow-lg cursor-pointer min-w-[100px]"
-      style={styles}
-      onClick={onClick}
-    >
-      <h2>{recipe.name}</h2>
-    </div>
+    <Container selected={selected}>
+      <div onClick={onClick}>
+        <h2>{recipe.name}</h2>
+      </div>
+    </Container>
   );
 };
 

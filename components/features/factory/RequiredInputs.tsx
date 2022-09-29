@@ -1,4 +1,5 @@
 import { ProductionStep } from "app/slices/productionSteps";
+import Container from "components/common/Container";
 import { items, recipes } from "data";
 import { Ingredient } from "data/recipes";
 interface Proptypes {
@@ -7,10 +8,10 @@ interface Proptypes {
 
 const Ingredient = ({ ingredient, ratio }: { ingredient: Ingredient; ratio: number }) => {
   return (
-    <div className="border-2 border-zinc-300 rounded-md min-w-[100px] p-3">
+    <Container>
       <h2 className="font-bold"> {items.map[ingredient.item].name}</h2>
       <div className="p-2">{(ingredient.amount * ratio).toFixed(4)}</div>
-    </div>
+    </Container>
   );
 };
 
