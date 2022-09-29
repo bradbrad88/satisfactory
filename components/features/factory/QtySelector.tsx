@@ -28,10 +28,7 @@ const QtySelector = ({ productionStep }: Proptypes) => {
   };
 
   return (
-    <div
-      onPointerDown={e => e.stopPropagation()}
-      className="relative p-1 border-zinc-300 border-2 rounded-md"
-    >
+    <div onPointerDown={e => e.stopPropagation()} className="">
       {/* Edit mode vs Read only */}
       {edit ? (
         <div onKeyDown={onKeyDown}>
@@ -42,7 +39,10 @@ const QtySelector = ({ productionStep }: Proptypes) => {
           />
         </div>
       ) : (
-        <div className="cursor-pointer hover:text-yellow-200" onClick={() => setEdit(true)}>
+        <div
+          className="cursor-pointer hover:text-yellow-200 p-2"
+          onClick={() => setEdit(true)}
+        >
           {quantity}
         </div>
       )}
