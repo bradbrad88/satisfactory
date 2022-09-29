@@ -28,10 +28,8 @@ const Recipe = ({
     dispatch(action.updateRecipe({ productionStep, recipe: recipe.id }));
   };
   return (
-    <Container selected={selected}>
-      <div onClick={onClick}>
-        <h2>{recipe.name}</h2>
-      </div>
+    <Container selected={selected} onClick={onClick}>
+      <h2>{recipe.name}</h2>
     </Container>
   );
 };
@@ -76,7 +74,7 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
         Recipes
       </button>
       {!hidden && (
-        <div className="absolute left-full bottom-1/2 ml-2 bg-cyan-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md z-10">
+        <div className="absolute left-full bottom-full ml-2 bg-cyan-900 grid auto-cols-min grid-flow-col gap-3 p-3 border-zinc-300 border-2 rounded-md z-10">
           {renderRecipes()}
         </div>
       )}
