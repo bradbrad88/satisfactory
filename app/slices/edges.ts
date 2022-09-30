@@ -5,6 +5,8 @@ import productionStepsReducers from "./productionSteps";
 
 type InputOrOutput = { input: string; output?: string } | { input?: string; output: string };
 
+// For the use-case where an edge and productionStep are created at the same time
+// All edges require both input and output to be valid but sometimes won't know a particular id until action prep.
 export type EdgeOneSide = {
   amount: number;
   item: string;
@@ -20,14 +22,21 @@ export interface EdgeInit {
   dependant?: string;
 }
 
+// Rather than treat input and output as relative to the edge, we're treating them as relative to where they're coming/going from
+
 export interface Edge {
   id: string;
+  // edge points to this productionStep's input
   input: string;
+  // edge points to this productionStep's output
   output: string;
   amount: number;
   item: string;
   dependant?: string;
 }
+
+// Output of this PS ---------------------------- Goes to input of this PS
+// productionStep.output => {output} edge {input} => productionStep.input
 
 export const edgeState = {
   edges: {
