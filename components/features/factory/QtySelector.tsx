@@ -1,24 +1,25 @@
 import { useState } from "react";
-import { useAppDispatch } from "app/hooks";
-import { action } from "app/slices/entities";
-import { ProductionStep } from "app/slices/productionSteps";
 import Input from "components/common/Input";
 
 interface Proptypes {
-  productionStep: ProductionStep;
+  amount: number;
+  onSubmit?: (value: number) => void;
+  edit: boolean;
+  setEdit: (edit: boolean) => void;
+  allowEdit?: true;
 }
 
-const QtySelector = ({ productionStep }: Proptypes) => {
-  const [edit, setEdit] = useState(false);
-  const dispatch = useAppDispatch();
+const QtySelector = ({ amount, onSubmit = () => {}, edit, setEdit, allowEdit }: Proptypes) => {
+  // const [edit, setEdit] = useState(false);
+  const quantity = amount.toFixed(4);
 
-  const quantity = productionStep.product.amount.toFixed(4);
-
-  const onSubmit = (value: string) => {
+  const handleSubmit = (value: string) => {
     const amount = parseFloat(value);
-    if (amount.toFixed(4) === quantity) return setEdit(false);
-    dispatch(action.updateProductQty({ productionStep: productionStep.id, amount }));
+
+    if (isNaN(amount)) return;
+
     setEdit(false);
+    onSubmit(amount);
   };
 
   const onKeyDown: React.KeyboardEventHandler = e => {
@@ -30,18 +31,14 @@ const QtySelector = ({ productionStep }: Proptypes) => {
   return (
     <div onPointerDown={e => e.stopPropagation()} className="">
       {/* Edit mode vs Read only */}
-      {edit ? (
-        <div onKeyDown={onKeyDown} className="w-24">
-          <Input
-            value={productionStep.product.amount + ""}
-            submit={onSubmit}
-            submitOnBlur={true}
-          />
+      {edit && allowEdit ? (
+        <div onKeyDown={onKeyDown} className="w-24" onClick={e => e.stopPropagation()}>
+          <Input value={amount + ""} submit={handleSubmit} submitOnBlur={true} />
         </div>
       ) : (
         <div
           className="cursor-pointer hover:text-yellow-200 p-2"
-          onClick={() => setEdit(true)}
+          // onClick={() => setEdit(true)}
         >
           {quantity}
         </div>

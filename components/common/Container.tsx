@@ -9,7 +9,7 @@ interface Proptypes {
 
 const Container = ({ children, selected = false, onClick = () => {} }: Proptypes) => {
   const classes = classnames(
-    "border-zinc-400 border-2 bg-zinc-800 rounded-lg hover:shadow-zinc-400 hover:shadow-md cursor-pointer min-w-[120px] p-2 transition-all",
+    "border-zinc-400 border-2 bg-zinc-800 rounded-lg hover:shadow-zinc-400 hover:shadow-md cursor-pointer min-w-[120px] p-2 transition-all overflow-hidden",
     { "border-amber-500": selected }
   );
   return (

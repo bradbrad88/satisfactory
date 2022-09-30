@@ -1,9 +1,7 @@
 import { useAppSelector } from "app/hooks";
 import { getProductionStep } from "app/slices/productionSteps";
-import Container from "components/common/Container";
-import { items } from "data";
 import ByProducts from "./ByProducts";
-import QtySelector from "./QtySelector";
+import IODrag from "./IODrag";
 
 interface Proptypes {
   productionStepId: string;
@@ -16,14 +14,14 @@ const Outputs = ({ productionStepId }: Proptypes) => {
     <div className="bg-zinc-800 p-2 rounded-md">
       <h2 className="text-amber-500">Outputs</h2>
       <div className="flex justify-between gap-3">
-        {/* Product */}
         <div className="">
           <h2>Product</h2>
-
-          <Container selected={true}>
-            <h2 className="font-bold">{items.map[productionStep.product.item].name}</h2>
-            <QtySelector productionStep={productionStep} />
-          </Container>
+          <IODrag
+            productionStep={productionStepId}
+            io="output"
+            product={productionStep.product}
+            qtyEditable={true}
+          />
         </div>
         <ByProducts productionStep={productionStepId} />
       </div>

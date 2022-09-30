@@ -1,8 +1,6 @@
 import { useAppSelector } from "app/hooks";
 import { getByProducts } from "app/slices/productionSteps";
-import { Ingredient } from "data/recipes";
-import { items } from "data";
-import Container from "components/common/Container";
+import IODrag from "./IODrag";
 
 interface Proptypes {
   productionStep: string;
@@ -14,7 +12,12 @@ const ByProducts = ({ productionStep }: Proptypes) => {
   const renderByProducts = () => {
     return (
       byProducts?.map(byProduct => (
-        <ByProduct key={productionStep + byProduct.item} byProduct={byProduct} />
+        <IODrag
+          io="output"
+          product={byProduct}
+          productionStep={productionStep}
+          key={productionStep + byProduct.item}
+        />
       )) || []
     );
   };
@@ -26,15 +29,6 @@ const ByProducts = ({ productionStep }: Proptypes) => {
       <h2>By-products</h2>
       <div className="grid grid-flow-col">{renderByProducts()}</div>
     </div>
-  );
-};
-
-const ByProduct = ({ byProduct }: { byProduct: Ingredient }) => {
-  return (
-    <Container>
-      <h2 className="font-bold">{items.map[byProduct.item].name}</h2>
-      <div className="p-2">{byProduct.amount.toFixed(4)}</div>
-    </Container>
   );
 };
 
