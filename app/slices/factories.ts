@@ -23,9 +23,17 @@ interface Factory {
 
 export const factoryState = {
   factories: {
-    byId: {} as { [key: string]: Factory },
-    allIds: [] as string[],
-    active: null as string | null,
+    byId: {
+      myfactory: {
+        id: "myfactory",
+        location: { x: 0, y: 0 },
+        name: "My Factory",
+        productionSteps: [],
+        venture: "myventure",
+      },
+    } as { [key: string]: Factory },
+    allIds: ["myfactory"] as string[],
+    active: "myfactory" as string | null,
   },
 };
 

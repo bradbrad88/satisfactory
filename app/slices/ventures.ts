@@ -15,9 +15,11 @@ export interface Venture {
 
 export const ventureState = {
   ventures: {
-    byId: {} as { [key: string]: Venture },
-    allIds: [] as string[],
-    active: null as string | null,
+    byId: { myventure: { id: "myventure", name: "My Venture", factories: ["myfactory"] } } as {
+      [key: string]: Venture;
+    },
+    allIds: ["myventure"] as string[],
+    active: "myventure" as string | null,
   },
 };
 
