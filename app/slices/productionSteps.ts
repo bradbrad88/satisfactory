@@ -100,6 +100,7 @@ const reducers = {
     const { productionStep, recipe } = action.payload;
     state.productionSteps.byId[productionStep].recipe = recipe;
     reducers.optimiseBuidingCount(state, { payload: productionStep });
+    // Handle edges
   },
   updateProductQty: (
     state: EntityState,
@@ -127,9 +128,10 @@ const reducers = {
     // Responsible for handling how the new amounts for each item are distributed to each edge
     const processProduct = (edges: Edge[], product: Ingredient) => {
       // Separate the dependants from the static
-      // Static edges will remain constant - the dependant edges need to work around this
-      const staticEdges = edges.filter(edge => !edge.dependant);
-      const dependantEdges = edges.filter(edge => edge.dependant);
+      // Static edges will remain constant - the dependant edges need to work around this.
+      // The case where this production step is
+      const staticEdges = edges.filter(edge => !edge.dependant || edge.dependant === id);
+      const dependantEdges = edges.filter(edge => edge.dependant && edge.dependant !== id);
       // If 0 dependants then exit
       if (!dependantEdges.length) return;
       // Find new input total
