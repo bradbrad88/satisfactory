@@ -3,18 +3,30 @@ import type { EntityState } from "./entities";
 import { RootState } from "app/store";
 import productionStepsReducers from "./productionSteps";
 
-interface EdgeInit {
+type InputOrOutput = { input: string; output?: string } | { input?: string; output: string };
+
+export type EdgeOneSide = {
+  amount: number;
+  item: string;
+  dependant?: string;
+} & InputOrOutput;
+
+export interface EdgeInit {
+  id?: string;
   input: string;
   output: string;
-  qty: number;
+  amount: number;
+  item: string;
+  dependant?: string;
 }
 
-interface Edge {
+export interface Edge {
+  id: string;
   input: string;
   output: string;
-  qty: number;
-  locked: boolean;
-  dependant?: "input" | "output";
+  amount: number;
+  item: string;
+  dependant?: string;
 }
 
 export const edgeState = {
@@ -25,7 +37,19 @@ export const edgeState = {
 };
 
 export const reducers = {
-  createEdge: (state: EntityState, action: { payload: EdgeInit }) => {},
+  createEdge: {
+    reducer: (state: EntityState, action: { payload: Edge }) => {
+      const { input, output, id } = action.payload;
+      state.productionSteps.byId[input].edges.push(id);
+      state.productionSteps.byId[output].edges.push(id);
+      state.edges.byId[id] = action.payload;
+      state.edges.allIds.push(id);
+    },
+    prepare: (edge: EdgeInit): { payload: Edge } => {
+      const newEdge = { ...edge, id: edge.id || nanoid() };
+      return { payload: newEdge };
+    },
+  },
 };
 
 export default {

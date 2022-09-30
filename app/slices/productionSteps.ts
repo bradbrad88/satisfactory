@@ -1,10 +1,12 @@
 import { nanoid } from "@reduxjs/toolkit";
 import { RootState } from "app/store";
-import type { EntityState } from "./entities";
+import { EdgeOneSide, reducers as edgeReducers } from "./edges";
 import { items, recipes, buildings } from "data";
 
+import type { EntityState } from "./entities";
 import type { Ingredient } from "data/recipes";
 import type { Edge, EdgeInit } from "./edges";
+import { type } from "os";
 
 interface ProductionStepInit {
   product: Ingredient;
@@ -41,15 +43,52 @@ const reducers = {
       };
     },
   },
-  createProductionStepAndLink: {
-    reducer: (state: EntityState) => {},
+  createProductionStepAndLinkEdge: {
+    reducer: (
+      state: EntityState,
+      action: { payload: { productionStep: ProductionStep; edge: Edge } }
+    ) => {
+      const { productionStep, edge } = action.payload;
+      const { id, factory } = productionStep;
+      state.productionSteps.byId[id] = productionStep;
+      state.productionSteps.allIds.push(id);
+      state.factories.byId[factory].productionSteps.push(id);
+      edgeReducers.createEdge.reducer(state, { payload: edge });
+    },
     prepare: (props: {
       productionStep: ProductionStepInit;
-      edge: EdgeInit;
-    }): { payload: { productionStep: ProductionStep; edge: Edge } } => {
+      edge: EdgeOneSide;
+      options: { dependant?: true | string };
+    }): {
+      payload: {
+        productionStep: ProductionStep;
+        edge: Edge;
+      };
+    } => {
       const productionStep = createProductionStep(props.productionStep);
-      const edge = { ...props.edge, id: nanoid() };
-      return { payload: { productionStep, edge } };
+      // Find the empty edge - either input or output - and provide new
+      const { dependant } = props.options;
+
+      // Apply new productionStep.id to the empty edge
+      if (!props.edge.input) {
+        props.edge.input = productionStep.id;
+      }
+      if (!props.edge.output) {
+        props.edge.output = productionStep.id;
+      }
+      // props.edge[io] = productionStep.id;
+
+      if (dependant) {
+        if (typeof dependant === "string") {
+          props.edge.dependant = dependant;
+        } else {
+          props.edge.dependant = productionStep.id;
+        }
+      }
+      const edge = { ...props.edge, id: nanoid() } as Edge;
+      return {
+        payload: { productionStep, edge },
+      };
     },
   },
   updateRecipe: (

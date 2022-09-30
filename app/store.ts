@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import entities from "./slices/entities";
+import ui from "./slices/ui";
 
 const store = configureStore({
   reducer: {
     entities,
+    ui,
   },
 });
 
