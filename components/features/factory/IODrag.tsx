@@ -21,9 +21,10 @@ const IODrag = ({ productionStep, product, qtyEditable, io }: Proptypes) => {
   const dispatch = useAppDispatch();
 
   const onDragStart: React.DragEventHandler = e => {
+    const { amount, item } = product;
     e.dataTransfer.dropEffect = "copy";
     e.dataTransfer.setData("", "");
-    dispatch(dragElement({ id: productionStep, type: io, qty: 12, item: product.item }));
+    dispatch(dragElement({ id: productionStep, type: io, amount, item }));
   };
 
   const onDragEnd: React.DragEventHandler = e => {
@@ -39,10 +40,10 @@ const IODrag = ({ productionStep, product, qtyEditable, io }: Proptypes) => {
     <div
       draggable
       onDragStart={onDragStart}
-      onMouseDown={e => e.stopPropagation()}
+      onPointerDown={e => e.stopPropagation()}
       onDragEnd={onDragEnd}
     >
-      <Container onClick={() => setEditQty(!editQty)}>
+      <Container selected={qtyEditable} onClick={() => setEditQty(!editQty)}>
         <h2 className="font-bold">{items.map[product.item].name}</h2>
         <QtySelector
           edit={editQty}
