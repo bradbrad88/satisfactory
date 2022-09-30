@@ -46,7 +46,7 @@ const ProductionStep = ({ id }: Proptypes) => {
           {/* Inputs */}
           <div className="bg-zinc-800 p-2 rounded-md">
             <h2 className="text-amber-500">Inputs</h2>
-            <RequiredInputs productionStep={productionStep} />
+            <RequiredInputs productionStep={id} />
           </div>
         </div>
       </div>
