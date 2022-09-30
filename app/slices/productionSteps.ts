@@ -1,12 +1,11 @@
 import { nanoid } from "@reduxjs/toolkit";
 import { RootState } from "app/store";
-import { EdgeOneSide, reducers as edgeReducers } from "./edges";
+import { reducers as edgeReducers } from "./edges";
 import { items, recipes, buildings } from "data";
 
 import type { EntityState } from "./entities";
 import type { Ingredient } from "data/recipes";
-import type { Edge, EdgeInit } from "./edges";
-import { type } from "os";
+import type { Edge, EdgeOneSide } from "./edges";
 
 interface ProductionStepInit {
   product: Ingredient;
@@ -28,7 +27,8 @@ export const productionStepState = {
 
 const reducers = {
   createProductionStep: {
-    reducer: (state: EntityState, action: { payload: ProductionStep }) => {
+    reducer: (state: EntityState, action: { payload: ProductionStep | null }) => {
+      if (!action.payload) return;
       const { id, factory } = action.payload;
       state.factories.byId[factory].productionSteps.push(id);
       action.payload.factory = factory;
@@ -36,7 +36,7 @@ const reducers = {
       state.productionSteps.byId[id] = action.payload;
       reducers.optimiseBuidingCount(state, { payload: id });
     },
-    prepare: (props: ProductionStepInit): { payload: ProductionStep } => {
+    prepare: (props: ProductionStepInit): { payload: ProductionStep | null } => {
       const productionStep = createProductionStep(props);
       return {
         payload: productionStep,
@@ -46,8 +46,9 @@ const reducers = {
   createProductionStepAndLinkEdge: {
     reducer: (
       state: EntityState,
-      action: { payload: { productionStep: ProductionStep; edge: Edge } }
+      action: { payload: { productionStep: ProductionStep; edge: Edge } | null }
     ) => {
+      if (!action.payload) return;
       const { productionStep, edge } = action.payload;
       const { id, factory } = productionStep;
       state.productionSteps.byId[id] = productionStep;
@@ -63,9 +64,10 @@ const reducers = {
       payload: {
         productionStep: ProductionStep;
         edge: Edge;
-      };
+      } | null;
     } => {
       const productionStep = createProductionStep(props.productionStep);
+      if (!productionStep) return { payload: null };
       // Find the empty edge - either input or output - and provide new
       const { dependant } = props.options;
 
@@ -103,9 +105,63 @@ const reducers = {
     state: EntityState,
     action: { payload: { productionStep: string; amount: number } }
   ) => {
-    const { productionStep, amount } = action.payload;
-    state.productionSteps.byId[productionStep].product.amount = amount;
-    reducers.optimiseBuidingCount(state, { payload: productionStep });
+    const { productionStep: id, amount } = action.payload;
+    const productionStep = state.productionSteps.byId[id];
+    productionStep.product.amount = amount;
+    reducers.optimiseBuidingCount(state, { payload: id });
+
+    // Get all edges related to the production step then split them into inputs and outputs
+    const edges = productionStep.edges.map(id => state.edges.byId[id]);
+    // This will gather edges that feed into the production step
+    const inputs = edges.filter(edge => edge.input === id);
+    // This will gather edges that distribute out from the production step
+    const outputs = edges.filter(edge => edge.output === id);
+
+    // Get the ratio - used against the original recipe to find new amount for each product
+    const recipe = recipes.map[productionStep.recipe];
+    const recipeItem = recipe.product.find(
+      product => product.item === productionStep.product.item
+    )!;
+    const ratio = productionStep.product.amount / recipeItem.amount;
+
+    // Responsible for handling how the new amounts for each item are distributed to each edge
+    const processProduct = (edges: Edge[], product: Ingredient) => {
+      // Separate the dependants from the static
+      // Static edges will remain constant - the dependant edges need to work around this
+      const staticEdges = edges.filter(edge => !edge.dependant);
+      const dependantEdges = edges.filter(edge => edge.dependant);
+      // If 0 dependants then exit
+      if (!dependantEdges.length) return;
+      // Find new input total
+      let newAmount = product.amount * ratio;
+      // Minus static edges
+      staticEdges.forEach(edge => {
+        newAmount -= edge.amount;
+      });
+      // Don't allow going into negatives. Imbalance is ok, but a production step going into negative qty is not
+      if (newAmount < 0) newAmount = 0;
+      // Distribute dependant edges equally
+      // dependantEdges.sort(with limits first)
+      dependantEdges.forEach((edge, idx) => {
+        let amount = newAmount / (dependantEdges.length - idx); // Implement limits here
+        newAmount -= amount;
+        edgeReducers.updateEdgeQty(state, {
+          payload: { amount, id: edge.id },
+        });
+      });
+    };
+
+    // Run processing function on ingredients
+    recipe.ingredients.forEach(ingredient => {
+      const edges = inputs.filter(edge => edge.item === ingredient.item);
+      processProduct(edges, ingredient);
+    });
+
+    // Run processing function on products
+    recipe.product.forEach(product => {
+      const edges = outputs.filter(edge => edge.item === product.item);
+      processProduct(edges, product);
+    });
   },
   updateBuildingCount: (
     state: EntityState,
@@ -123,6 +179,18 @@ const reducers = {
     if (!recipeItem) return;
     const ratio = buildingStep.product.amount / recipeItem.amount;
     buildingStep.buildingCount = Math.ceil(ratio);
+  },
+  updateProductQtyToSumOfEdges: (state: EntityState, action: { payload: string }) => {
+    const id = action.payload;
+    const productionStep = state.productionSteps.byId[id];
+    // Get the sum of edges pointing to the product
+    const amount = productionStep.edges
+      .map(id => state.edges.byId[id])
+      .filter(
+        edge => edge.output === productionStep.id && edge.item === productionStep.product.item
+      )
+      .reduce((sum, edge) => sum + edge.amount, 0);
+    reducers.updateProductQty(state, { payload: { productionStep: id, amount } });
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
@@ -207,7 +275,7 @@ export default {
   ...reducers,
 };
 
-function createProductionStep(productionStep: ProductionStepInit): ProductionStep {
+function createProductionStep(productionStep: ProductionStepInit): ProductionStep | null {
   const { product } = productionStep;
   const id = nanoid();
   const itemData = items.map[product.item];
@@ -215,6 +283,7 @@ function createProductionStep(productionStep: ProductionStepInit): ProductionSte
   let recipe = itemData.recipes.filter(recipe => !recipe.alternate)[0]?.id;
   // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
   if (!recipe) recipe = itemData.recipes[0]?.id;
+  if (!recipe) return null;
   const edges = [] as string[];
   const ratio = getProductionRatio(recipe, product);
   const buildingCount = Math.ceil(ratio || 0);
@@ -229,6 +298,7 @@ function createProductionStep(productionStep: ProductionStepInit): ProductionSte
 }
 
 function getProductionRatio(recipeId: string, product: Ingredient): number | null {
+  console.log(recipeId);
   const recipe = recipes.map[recipeId];
   const recipeItem = recipe.product.find(product => product.item === product.item);
   if (!recipeItem) return null;

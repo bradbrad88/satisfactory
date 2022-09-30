@@ -59,6 +59,14 @@ export const reducers = {
       return { payload: newEdge };
     },
   },
+  updateEdgeQty: (state: EntityState, action: { payload: { id: string; amount: number } }) => {
+    const { id, amount } = action.payload;
+    const edge = state.edges.byId[id];
+    edge.amount = amount;
+    if (edge.dependant) {
+      productionStepsReducers.updateProductQtyToSumOfEdges(state, { payload: edge.dependant });
+    }
+  },
 };
 
 export default {
