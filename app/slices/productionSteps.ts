@@ -4,9 +4,11 @@ import type { EntityState } from "./entities";
 import { items, recipes, buildings } from "data";
 
 import type { Ingredient } from "data/recipes";
+import type { Edge, EdgeInit } from "./edges";
 
 interface ProductionStepInit {
   product: Ingredient;
+  factory: string;
 }
 
 export interface ProductionStep {
@@ -14,8 +16,6 @@ export interface ProductionStep {
   recipe: string;
   buildingCount: number;
   product: Ingredient;
-  byProducts: Ingredient[];
-  requiredInputs: Ingredient[];
   edges: string[];
   factory: string;
 }
@@ -27,30 +27,29 @@ export const productionStepState = {
 const reducers = {
   createProductionStep: {
     reducer: (state: EntityState, action: { payload: ProductionStep }) => {
-      const { id } = action.payload;
-      const factory = state.factories.active;
-      if (!factory) return;
+      const { id, factory } = action.payload;
       state.factories.byId[factory].productionSteps.push(id);
       action.payload.factory = factory;
       state.productionSteps.allIds.push(id);
       state.productionSteps.byId[id] = action.payload;
       reducers.optimiseBuidingCount(state, { payload: id });
     },
-    prepare: (props: ProductionStepInit) => {
-      const { product } = props;
-      const id = nanoid();
-      const itemData = items.map[product.item];
-      // Pick first non-alternate recipe as default
-      let recipe = itemData.recipes.filter(recipe => !recipe.alternate)[0]?.id;
-      // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
-      if (!recipe) recipe = itemData.recipes[0]?.id;
-      const byProducts = [] as Ingredient[];
-      const requiredInputs = [] as Ingredient[];
-      const edges = [] as string[];
-
+    prepare: (props: ProductionStepInit): { payload: ProductionStep } => {
+      const productionStep = createProductionStep(props);
       return {
-        payload: { id, product, edges, byProducts, requiredInputs, recipe } as ProductionStep,
+        payload: productionStep,
       };
+    },
+  },
+  createProductionStepAndLink: {
+    reducer: (state: EntityState) => {},
+    prepare: (props: {
+      productionStep: ProductionStepInit;
+      edge: EdgeInit;
+    }): { payload: { productionStep: ProductionStep; edge: Edge } } => {
+      const productionStep = createProductionStep(props.productionStep);
+      const edge = { ...props.edge, id: nanoid() };
+      return { payload: { productionStep, edge } };
     },
   },
   updateRecipe: (
@@ -115,6 +114,22 @@ export const getProductionStep = (id: string) => {
   };
 };
 
+export const getRequiredInputs = (id: string) => {
+  return (state: RootState) => {
+    const productionStep = state.entities.productionSteps.byId[id];
+    const recipe = recipes.map[productionStep.recipe];
+    const product = recipe.product.find(
+      product => product.item === productionStep.product.item
+    );
+    if (!product) return null;
+    const ratio = productionStep.product.amount / product.amount;
+    return recipe.ingredients.map(ingredient => ({
+      ...ingredient,
+      amount: ingredient.amount * ratio,
+    }));
+  };
+};
+
 export const getByProducts = (id: string) => {
   return (state: RootState) => {
     const prodStep = state.entities.productionSteps.byId[id];
@@ -143,7 +158,6 @@ export const getBuildingDetails = (id: string) => {
     );
     if (!recipeProduct) return;
     const count = prodStep.buildingCount;
-    // const count = prodStep.product.amount / recipeProduct.amount;
     const overclock = (100 * prodStep.product.amount) / (count * recipeProduct.amount);
     const power = building.power * count * Math.pow(overclock / 100, building.powerExponent);
     return { building: building.name, power, count, overclock };
@@ -153,3 +167,31 @@ export const getBuildingDetails = (id: string) => {
 export default {
   ...reducers,
 };
+
+function createProductionStep(productionStep: ProductionStepInit): ProductionStep {
+  const { product } = productionStep;
+  const id = nanoid();
+  const itemData = items.map[product.item];
+  // Pick first non-alternate recipe as default
+  let recipe = itemData.recipes.filter(recipe => !recipe.alternate)[0]?.id;
+  // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
+  if (!recipe) recipe = itemData.recipes[0]?.id;
+  const edges = [] as string[];
+  const ratio = getProductionRatio(recipe, product);
+  const buildingCount = Math.ceil(ratio || 0);
+  return {
+    ...productionStep,
+    id,
+    product,
+    edges,
+    recipe,
+    buildingCount,
+  };
+}
+
+function getProductionRatio(recipeId: string, product: Ingredient): number | null {
+  const recipe = recipes.map[recipeId];
+  const recipeItem = recipe.product.find(product => product.item === product.item);
+  if (!recipeItem) return null;
+  return product.amount / recipeItem.amount;
+}
