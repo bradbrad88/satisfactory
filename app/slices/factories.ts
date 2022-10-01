@@ -10,7 +10,7 @@ interface Coordinate {
 
 interface FactoryInit {
   name: string;
-  // venture: string;
+  venture: string;
 }
 
 interface Factory {
@@ -40,15 +40,12 @@ export const factoryState = {
 export const reducers = {
   createFactory: {
     reducer: (state: EntityState, action: PayloadAction<Factory>) => {
-      const { id } = action.payload;
-      const venture = state.ventures.active;
-      if (!venture) return;
-      action.payload.venture = venture;
+      const { id, venture } = action.payload;
       state.factories.allIds.push(id);
       state.factories.byId[id] = action.payload;
       state.ventures.byId[venture].factories.push(id);
     },
-    prepare: (factory: FactoryInit) => {
+    prepare: (factory: FactoryInit): { payload: Factory } => {
       const id = nanoid();
       const location = { x: 0, y: 0 };
       const productionSteps = [] as string[];
