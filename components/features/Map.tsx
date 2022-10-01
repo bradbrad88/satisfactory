@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 interface Proptypes {
-  children: React.ReactNode;
+  children: ({ scale }: { scale: number }) => React.ReactNode;
 }
 
 const Map = ({ children }: Proptypes) => {
@@ -98,6 +98,7 @@ const Map = ({ children }: Proptypes) => {
   const style: React.CSSProperties = {
     transform: `translate(${offset.x}px, ${offset.y}px)`,
   };
+
   return (
     <div ref={mapRef} className="w-full h-full overflow-hidden" onWheel={onWheel}>
       <div
@@ -107,7 +108,7 @@ const Map = ({ children }: Proptypes) => {
         onPointerDown={onPointerDown}
       >
         <div className="relative" style={{ transform: `scale(${zoom})` }}>
-          {children}
+          {children({ scale: zoom })}
         </div>
       </div>
     </div>

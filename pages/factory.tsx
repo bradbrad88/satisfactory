@@ -43,9 +43,7 @@ const Factory = () => {
   };
   return (
     <div className="bg-zinc-900 h-screen ">
-      <Map>
-        <FactoryMap />
-      </Map>
+      <Map>{(props: { scale: number }) => <FactoryMap {...props} />}</Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}
         bottomPanel={<FactoryToolbar toggleItemPanel={toggleItemPanel} />}
