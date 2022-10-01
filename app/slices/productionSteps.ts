@@ -285,9 +285,9 @@ function createProductionStep(productionStep: ProductionStepInit): ProductionSte
   const id = nanoid();
   const itemData = items.map[product.item];
   // Pick first non-alternate recipe as default
-  let recipe = itemData.recipes.filter(recipe => !recipe.alternate)[0]?.id;
+  let recipe = itemData.createdBy.filter(recipe => !recipe.alternate)[0]?.id;
   // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
-  if (!recipe) recipe = itemData.recipes[0]?.id;
+  if (!recipe) recipe = itemData.createdBy[0]?.id;
   if (!recipe) return null;
   const edges = [] as string[];
   const ratio = getProductionRatio(recipe, product);

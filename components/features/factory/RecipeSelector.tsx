@@ -53,7 +53,7 @@ const RecipeSelector = ({ productionStep, item, selected }: Proptypes) => {
     setHidden(true);
   };
 
-  const recipes = items.map[item]?.recipes;
+  const recipes = items.map[item]?.createdBy;
   const renderRecipes = () => {
     return recipes.map(recipe => (
       <Recipe

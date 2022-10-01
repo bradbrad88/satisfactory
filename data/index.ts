@@ -1,6 +1,6 @@
 import buildingsData, { Building } from "./buildings";
 import recipesData, { Recipe } from "./recipes";
-import itemsData, { ItemWithoutRecipe } from "./items";
+import itemsData, { ItemWithoutRecipes } from "./items";
 // import { RootShape } from "app/store";
 
 interface RootShape<T> {
@@ -9,8 +9,9 @@ interface RootShape<T> {
   produceItems?: T[];
 }
 
-interface Item extends ItemWithoutRecipe {
-  recipes: Recipe[];
+interface Item extends ItemWithoutRecipes {
+  createdBy: Recipe[];
+  canCreate: Recipe[];
 }
 
 export type { Building, Item, Recipe };
@@ -42,9 +43,9 @@ const recipes = recipesData.reduce(
 
 // Transform items to root shape, apply empty array so they are ready to receive recipes
 const items = itemsData.reduce(
-  (items: RootShape<Item>, item: ItemWithoutRecipe) => {
+  (items: RootShape<Item>, item: ItemWithoutRecipes) => {
     const { id } = item;
-    const newItem = { ...item, recipes: [] };
+    const newItem = { ...item, createdBy: [], canCreate: [] };
     items.array.push(newItem);
     items.map[id] = newItem;
     return items;
@@ -65,7 +66,7 @@ items.produceItems = items.array.filter(item => {
 // Attach recipes to items where they are the product of the recipe
 recipes.array.forEach(recipe => {
   recipes.map[recipe.id].product.forEach(ingredient => {
-    items.map[ingredient.item].recipes.push(recipe);
+    items.map[ingredient.item].createdBy.push(recipe);
   });
 });
 

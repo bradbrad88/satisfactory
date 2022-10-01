@@ -1,4 +1,4 @@
-export interface ItemWithoutRecipe {
+export interface ItemWithoutRecipes {
   id: string;
   name: string;
   isFluid: boolean;
@@ -1184,4 +1184,4 @@ export default [
     rawResource: false,
     energy: 0,
   },
-] as ItemWithoutRecipe[];
+] as ItemWithoutRecipes[];
