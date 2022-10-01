@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "app/hooks";
+import { getActiveVenture } from "app/slices/ventures";
 import { getFactories, getFactory } from "app/slices/factories";
 import { action } from "app/slices/entities";
 import Button from "components/common/Button";
@@ -23,6 +24,7 @@ const Factory = ({ id }: { id: string }) => {
 
 const FactoryList = () => {
   const factories = useAppSelector(getFactories);
+  const venture = useAppSelector(getActiveVenture)!;
   const dispatch = useAppDispatch();
   const renderFactories = () => {
     return factories.map(id => {
@@ -32,7 +34,7 @@ const FactoryList = () => {
 
   const newFactory = () => {
     const name = `Factory${(factories.length + 1).toString().padStart(2, "0")}`;
-    dispatch(action.createFactory({ name }));
+    dispatch(action.createFactory({ name, venture }));
   };
 
   return (
