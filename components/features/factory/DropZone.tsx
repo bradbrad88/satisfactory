@@ -18,7 +18,7 @@ const DropZone = ({ children }: Proptypes) => {
     const { type, id, item, amount } = dragElement;
     switch (type) {
       case "input":
-        const edge: EdgeOneSide = { amount, item, output: id };
+        const edge: EdgeOneSide = { amount, item, input: id };
         const productionStep = { factory, product: { item, amount } };
         return dispatch(
           action.createProductionStepAndLinkEdge({
