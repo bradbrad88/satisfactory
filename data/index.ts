@@ -68,6 +68,9 @@ recipes.array.forEach(recipe => {
   recipes.map[recipe.id].product.forEach(ingredient => {
     items.map[ingredient.item].createdBy.push(recipe);
   });
+  recipes.map[recipe.id].ingredients.forEach(ingredient => {
+    items.map[ingredient.item].canCreate.push(recipe);
+  });
 });
 
 export { buildings, recipes, items };
