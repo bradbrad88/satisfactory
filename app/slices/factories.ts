@@ -60,7 +60,7 @@ export const reducers = {
   setActiveFactory: (state: EntityState, action: PayloadAction<string | null>) => {
     state.factories.active = action.payload;
   },
-  destroyFactory: (state: EntityState, action: PayloadAction<string | undefined>) => {
+  destroyFactory: (state: EntityState, action: { payload: string }) => {
     // Get factory id to delete
     const id = action.payload || state.factories.active;
     if (!id) return;
@@ -85,9 +85,11 @@ export const reducers = {
     if (id === state.factories.active) state.factories.active = null;
   },
   destroyFactories: (state: EntityState, action: { payload: string[] }) => {
-    action.payload.forEach(id => {
-      reducers.destroyFactory(state, { payload: id, type: "" });
-    });
+    const factories = action.payload;
+
+    while (factories.length > 0) {
+      reducers.destroyFactory(state, { payload: factories[0] });
+    }
   },
 };
 

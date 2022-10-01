@@ -196,18 +196,21 @@ const reducers = {
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
-    const factory = state.productionSteps.byId[id].factory;
+    const productionStep = state.productionSteps.byId[id];
+    const edges = productionStep.edges;
+    edgeReducers.destroyEdges(state, { payload: edges }); //
+    const factory = productionStep.factory;
     const idx = state.productionSteps.allIds.indexOf(id);
-    delete state.productionSteps.byId[id];
     state.productionSteps.allIds.splice(idx, 1);
+    delete state.productionSteps.byId[id];
     const facIdx = state.factories.byId[factory].productionSteps.indexOf(id);
     state.factories.byId[factory].productionSteps.splice(facIdx, 1);
   },
   destroyProductionSteps: (state: EntityState, action: { payload: string[] }) => {
     const ids = action.payload;
-    ids.forEach(id => {
-      reducers.destroyProductionStep(state, { payload: id });
-    });
+    while (ids.length > 0) {
+      reducers.destroyProductionStep(state, { payload: ids[0] });
+    }
   },
 };
 
