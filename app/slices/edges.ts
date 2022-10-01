@@ -67,6 +67,30 @@ export const reducers = {
       productionStepsReducers.updateProductQtyToSumOfEdges(state, { payload: edge.dependant });
     }
   },
+  destroyEdge: (state: EntityState, action: { payload: string }) => {
+    const id = action.payload;
+    const edge = state.edges.byId[id];
+    const edges = state.edges.allIds;
+    const removeEdge = (productionStepId: string) => {
+      if (!productionStepId) return;
+      const productionStep = state.productionSteps.byId[productionStepId];
+      const edges = productionStep.edges;
+      const idx = edges.indexOf(id);
+      edges.splice(idx, 1);
+    };
+    removeEdge(edge.input);
+    removeEdge(edge.output);
+
+    const idx = edges.indexOf(id);
+    edges.splice(idx, 1);
+    delete state.edges.byId[id];
+  },
+  destroyEdges: (state: EntityState, action: { payload: string[] }) => {
+    const edges = action.payload;
+    while (edges.length > 0) {
+      reducers.destroyEdge(state, { payload: edges[0] });
+    }
+  },
 };
 
 export default {
