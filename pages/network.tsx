@@ -7,6 +7,7 @@ import NetworkMap from "components/features/network/NetworkMap";
 import FactoryList from "components/features/factory/FactoryList";
 import OverlayToolbar from "components/features/OverlayToolbar";
 import NetworkToolbar from "components/features/network/NetworkToolbar";
+import LocalStorageLoader from "components/common/LocalStorageLoader";
 
 const panelOptions = {
   factories: "FACTORIES",
@@ -36,9 +37,8 @@ const Network = () => {
 
   return (
     <div className="relative bg-zinc-900 h-screen w-screen  mx-auto">
-      <Map>
-        <NetworkMap />
-      </Map>
+      <LocalStorageLoader />
+      <Map>{() => <NetworkMap />}</Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}
         bottomPanel={<NetworkToolbar toggleFactories={toggleFactories} />}

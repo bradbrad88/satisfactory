@@ -9,6 +9,7 @@ import OverlayToolbar from "components/features/OverlayToolbar";
 import FactoryToolbar from "components/features/factory/FactoryToolbar";
 import ItemLookup from "components/features/ItemLookup";
 import FactoryMap from "components/features/factory/FactoryMap";
+import LocalStorageLoader from "components/common/LocalStorageLoader";
 
 const panelOptions = {
   itemLookup: "ITEM_LOOKUP",
@@ -19,9 +20,11 @@ const Factory = () => {
   const activeFactory = useAppSelector(getActiveFactory);
   const router = useRouter();
   const dispatch = useAppDispatch();
+
   useEffect(() => {
     if (!activeFactory) router.replace("/network");
   });
+
   const toggleItemPanel = () => {
     if (leftPanel === panelOptions.itemLookup) return setLeftPanel("");
     setLeftPanel(panelOptions.itemLookup);
@@ -43,6 +46,7 @@ const Factory = () => {
   };
   return (
     <div className="bg-zinc-900 h-screen ">
+      <LocalStorageLoader />
       <Map>{(props: { scale: number }) => <FactoryMap {...props} />}</Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}

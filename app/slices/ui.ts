@@ -10,6 +10,7 @@ interface Drag {
 
 const initialState = {
   drag: null as Drag | null,
+  loaded: false,
 };
 
 const slice = createSlice({
@@ -18,15 +19,14 @@ const slice = createSlice({
   reducers: {
     dragElement: (state: UI, action: { payload: Drag | null }) => {
       state.drag = action.payload;
-
-      // prepare: () => {
-      //   return { payload: {} };
-      // },
+    },
+    setLoaded: (state: UI) => {
+      state.loaded = true;
     },
   },
 });
 
-export const { dragElement } = slice.actions;
+export const { dragElement, setLoaded } = slice.actions;
 export default slice.reducer;
 export type UI = typeof initialState;
 
