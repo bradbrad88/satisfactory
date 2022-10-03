@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionCreatorWithPayload } from "@reduxjs/toolkit";
 import { useAppDispatch, useAppSelector } from "app/hooks";
 import { getMapDetails } from "app/slices/ui";
+import classnames from "classnames";
 
 interface Payload {
   id: string;
@@ -43,7 +44,7 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
       const newY = (e.clientY - top) / scale - offsetY;
       dispatch(updater({ id, location: { x: newX, y: newY } }));
     },
-    [mouseOffset.current, setDragPosition]
+    [mouseOffset.current, mapDetailsRef.current, setDragPosition]
   );
 
   useEffect(() => {
@@ -81,10 +82,15 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
     top: dragging ? dragPosition.y : y,
   };
 
+  const className = classnames("absolute", "cursor-grab", {
+    "cursor-grabbing": dragging,
+    "cursor-grab": !dragging,
+  });
+
   return (
     <div
       style={style}
-      className="absolute cursor-grab"
+      className={className}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
     >
