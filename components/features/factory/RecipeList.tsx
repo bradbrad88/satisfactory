@@ -2,9 +2,10 @@ import { useAppDispatch, useAppSelector } from "app/hooks";
 import { EdgeOneSide } from "app/slices/edges";
 import { action } from "app/slices/entities";
 import { getActiveFactory } from "app/slices/factories";
-import Container from "components/common/Container";
-import { Recipe } from "data";
 import { items } from "data";
+import Container from "components/common/Container";
+
+import type { Recipe } from "data";
 
 interface Proptypes {
   recipes: Recipe[];
@@ -12,12 +13,14 @@ interface Proptypes {
   // Refers to the ingredient item. Produced item needs to be derived from this
   item: string;
   id: string;
+  location: { x: number; y: number };
   close: () => void;
 }
 
-const RecipeList = ({ recipes, amount, item, id, close }: Proptypes) => {
+const RecipeList = ({ recipes, amount, item, id, location, close }: Proptypes) => {
   const dispatch = useAppDispatch();
   const factory = useAppSelector(getActiveFactory)!;
+
   const createProductionStepFromOutput = (recipe: Recipe) => {
     // Get product from recipe - try to avoid by-product - go for highest points for now
     const product = recipe.product.reduce((highestPoints, product) => {
@@ -25,8 +28,8 @@ const RecipeList = ({ recipes, amount, item, id, close }: Proptypes) => {
         ? product
         : highestPoints;
     });
-    const recipeItem = recipe.ingredients.find(ingredient => ingredient.item === item)!;
 
+    const recipeItem = recipe.ingredients.find(ingredient => ingredient.item === item)!;
     const ratio = amount / recipeItem.amount;
 
     const edge: EdgeOneSide = {
@@ -37,7 +40,9 @@ const RecipeList = ({ recipes, amount, item, id, close }: Proptypes) => {
     const productionStep = {
       factory,
       product: { ...product, amount: product.amount * ratio },
+      location,
     };
+
     dispatch(
       action.createProductionStepAndLinkEdge({
         edge,
@@ -47,6 +52,7 @@ const RecipeList = ({ recipes, amount, item, id, close }: Proptypes) => {
     );
     close();
   };
+
   return (
     <Container>
       {recipes.map(recipe => (
