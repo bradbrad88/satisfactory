@@ -10,6 +10,7 @@ import type { Edge, EdgeOneSide } from "./edges";
 interface ProductionStepInit {
   product: Ingredient;
   factory: string;
+  location: { x: number; y: number };
 }
 
 export interface ProductionStep {
@@ -19,6 +20,7 @@ export interface ProductionStep {
   product: Ingredient;
   edges: string[];
   factory: string;
+  location: { x: number; y: number };
 }
 
 export const productionStepState = {
@@ -193,6 +195,13 @@ const reducers = {
       )
       .reduce((sum, edge) => sum + edge.amount, 0);
     reducers.updateProductQty(state, { payload: { productionStep: id, amount } });
+  },
+  updateLocation: (
+    state: EntityState,
+    action: { payload: { id: string; location: { x: number; y: number } } }
+  ) => {
+    const { id, location } = action.payload;
+    state.productionSteps.byId[id].location = location;
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
