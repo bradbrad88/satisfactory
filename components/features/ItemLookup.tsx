@@ -1,16 +1,21 @@
+import { useAppDispatch, useAppSelector } from "app/hooks";
+import { action } from "app/slices/entities";
+import { getActiveFactory } from "app/slices/factories";
+import { getMapDetails } from "app/slices/ui";
 import Button from "components/common/Button";
 import Input from "components/common/Input";
 import { items as originalItems } from "data";
 import { useEffect, useRef, useState } from "react";
 
-interface Proptypes {
-  onItemSelect: (itemId: string) => void;
-}
+interface Proptypes {}
 
-const ItemLookup = ({ onItemSelect }: Proptypes) => {
+const ItemLookup = ({}: Proptypes) => {
   const [items, setItems] = useState(originalItems.produceItems);
   const [searchTerm, setSearchTerm] = useState("");
   const timeoutRef = useRef<NodeJS.Timeout | undefined>();
+  const dispatch = useAppDispatch();
+  const factory = useAppSelector(getActiveFactory)!;
+  const mapDetails = useAppSelector(getMapDetails);
 
   useEffect(() => {
     clearTimeout(timeoutRef.current);
@@ -22,6 +27,20 @@ const ItemLookup = ({ onItemSelect }: Proptypes) => {
       setItems(newItems);
     }, 300);
   }, [searchTerm]);
+
+  const onItemSelect = (item: string) => {
+    const { height, width, mapScale: scale } = mapDetails;
+    const x = width / scale / 2;
+    const y = height / scale / 2;
+
+    dispatch(
+      action.createProductionStep({
+        product: { item, amount: 20 },
+        factory,
+        location: { x, y },
+      })
+    );
+  };
 
   const onSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

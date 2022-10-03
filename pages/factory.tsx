@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch, useAppSelector } from "app/hooks";
-import { action } from "app/slices/entities";
 import { getActiveFactory } from "app/slices/factories";
 
 import Map from "components/features/Map";
@@ -19,7 +18,6 @@ const Factory = () => {
   const [leftPanel, setLeftPanel] = useState(panelOptions.itemLookup);
   const activeFactory = useAppSelector(getActiveFactory);
   const router = useRouter();
-  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (!activeFactory) router.replace("/network");
@@ -30,16 +28,10 @@ const Factory = () => {
     setLeftPanel(panelOptions.itemLookup);
   };
 
-  const onItemSelect = (item: string) => {
-    dispatch(
-      action.createProductionStep({ product: { item, amount: 20 }, factory: activeFactory! })
-    );
-  };
-
   const getLeftPanel = () => {
     switch (leftPanel) {
       case panelOptions.itemLookup:
-        return <ItemLookup onItemSelect={onItemSelect} />;
+        return <ItemLookup />;
       default:
         return null;
     }
@@ -47,7 +39,9 @@ const Factory = () => {
   return (
     <div className="bg-zinc-900 h-screen ">
       <LocalStorageLoader />
-      <Map>{(props: { scale: number }) => <FactoryMap {...props} />}</Map>
+      <Map>
+        <FactoryMap />
+      </Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}
         bottomPanel={<FactoryToolbar toggleItemPanel={toggleItemPanel} />}

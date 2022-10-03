@@ -1,7 +1,8 @@
 import Link from "next/link";
 import Button from "components/common/Button";
-import { useAppDispatch } from "app/hooks";
+import { useAppDispatch, useAppSelector } from "app/hooks";
 import { action } from "app/slices/entities";
+import { getActiveFactory } from "app/slices/factories";
 
 interface Proptypes {
   toggleItemPanel: () => void;
@@ -9,8 +10,10 @@ interface Proptypes {
 
 const FactoryToolbar = ({ toggleItemPanel }: Proptypes) => {
   const dispatch = useAppDispatch();
+  const activeFactory = useAppSelector(getActiveFactory)!;
+
   const destroyFactory = () => {
-    dispatch(action.destroyFactory());
+    dispatch(action.destroyFactory(activeFactory));
   };
 
   return (

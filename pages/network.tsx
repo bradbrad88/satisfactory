@@ -38,7 +38,9 @@ const Network = () => {
   return (
     <div className="relative bg-zinc-900 h-screen w-screen  mx-auto">
       <LocalStorageLoader />
-      <Map>{() => <NetworkMap />}</Map>
+      <Map>
+        <NetworkMap />
+      </Map>
       <OverlayToolbar
         leftPanel={getLeftPanel()}
         bottomPanel={<NetworkToolbar toggleFactories={toggleFactories} />}

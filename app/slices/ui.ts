@@ -32,7 +32,6 @@ const slice = createSlice({
       state: UI,
       action: { payload: { left: number; top: number; height: number; width: number } }
     ) => {
-      console.log("Setting bounding rect in redux");
       state.mapBoundingRect = action.payload;
     },
   },
