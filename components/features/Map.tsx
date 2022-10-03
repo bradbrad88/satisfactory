@@ -1,19 +1,25 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useAppDispatch, useAppSelector } from "app/hooks";
+import { getMapDetails, setMapBoundingRect, setMapScale } from "app/slices/ui";
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 interface Proptypes {
-  children: ({ scale }: { scale: number }) => React.ReactNode;
+  children: React.ReactNode;
 }
 
 const Map = ({ children }: Proptypes) => {
-  const [zoom, setZoom] = useState(1);
-  // Offset affects the canvas position within the map - (0, 0) is top left
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const mouseInitPosition = useRef({ x: 0, y: 0 });
   const offsetInitPosition = useRef({ x: 0, y: 0 });
   const dragging = useRef(false);
-  // Used for getting the size of the map and canvas elements - map being the container, canvas the floating element
+  // Used for getting the size of the map and canvas elements - map being the container, canvas the floating element, transform ref to get boundingRect after scaling
   const mapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
+  const transformingRef = useRef<HTMLDivElement>(null);
+  const dispatch = useAppDispatch();
+  const mapDetails = useAppSelector(getMapDetails);
+  const mapDetailsRef = useRef(mapDetails);
+  mapDetailsRef.current = mapDetails;
+  const { top, left, mapScale } = mapDetailsRef.current;
 
   const centreCanvas = useCallback(() => {
     if (!canvasRef.current || !mapRef.current) return;
@@ -30,10 +36,18 @@ const Map = ({ children }: Proptypes) => {
     centreCanvas();
   }, []);
 
+  useEffect(() => {
+    if (!transformingRef.current) return;
+    const clientRect = transformingRef.current.getBoundingClientRect();
+    if (left !== clientRect.left || top !== clientRect.top) {
+      const { top, left, width, height } = clientRect;
+      dispatch(setMapBoundingRect({ top, left, width, height }));
+    }
+  });
+
   const pointerMove = useCallback((e: PointerEvent) => {
     if (!dragging.current) return;
     if (!mapRef.current || !canvasRef.current) return;
-    //
     const { x, y } = mouseInitPosition.current;
     const { x: xInit, y: yInit } = offsetInitPosition.current;
     // Put limits on x and y so we don't lose the canvas
@@ -65,6 +79,7 @@ const Map = ({ children }: Proptypes) => {
   }, []);
 
   const pointerUp = useCallback((e: PointerEvent) => {
+    if (!dragging.current) return;
     dragging.current = false;
   }, []);
 
@@ -84,31 +99,38 @@ const Map = ({ children }: Proptypes) => {
   };
 
   const onWheel = (e: React.WheelEvent) => {
-    setZoom(prevState => {
-      const step = 0.01;
-      const { deltaY } = e;
-      const direction = deltaY < 0 ? 1 : -1;
-      let newZoom = step * direction + prevState;
-      if (newZoom > 1) newZoom = 1;
-      if (newZoom < 0.4) newZoom = 0.4;
-      return newZoom;
-    });
+    const step = 0.01;
+    const { deltaY } = e;
+    const direction = deltaY < 0 ? 1 : -1;
+    let newZoom = step * direction + mapScale;
+    if (newZoom > 1) newZoom = 1;
+    if (newZoom < 0.4) newZoom = 0.4;
+    dispatch(setMapScale(newZoom));
   };
 
-  const style: React.CSSProperties = {
+  const outterStyle: React.CSSProperties = {
     transform: `translate(${offset.x}px, ${offset.y}px)`,
   };
 
+  const innerStyle: React.CSSProperties = {
+    transform: `scale(${mapScale})`,
+  };
+
   return (
+    // Static frame
     <div ref={mapRef} className="w-full h-full overflow-hidden" onWheel={onWheel}>
+      {/* Motion canvas */}
       <div
         ref={canvasRef}
-        style={style}
+        style={outterStyle}
         className="w-fit h-fit p-96 bg-zinc-800 border-dashed  border-2 border-zinc-600 "
         onPointerDown={onPointerDown}
       >
-        <div className="relative" style={{ transform: `scale(${zoom})` }}>
-          {children({ scale: zoom })}
+        {/* Canvas without padding */}
+        <div>
+          <div ref={transformingRef} className="relative" style={innerStyle}>
+            {children}
+          </div>
         </div>
       </div>
     </div>
