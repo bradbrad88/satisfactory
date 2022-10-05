@@ -41,6 +41,7 @@ const RecipeList = ({ recipes, amount, item, id, location, close }: Proptypes) =
       factory,
       product: { ...product, amount: product.amount * ratio },
       location,
+      recipe: recipe.id,
     };
 
     dispatch(
