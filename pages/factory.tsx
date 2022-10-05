@@ -37,7 +37,7 @@ const Factory = () => {
     }
   };
   return (
-    <div className="bg-zinc-900 h-screen ">
+    <div className="bg-zinc-900 h-screen touch-none">
       <LocalStorageLoader />
       <Map>
         <FactoryMap />
