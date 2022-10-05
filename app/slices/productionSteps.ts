@@ -11,6 +11,7 @@ interface ProductionStepInit {
   product: Ingredient;
   factory: string;
   location: { x: number; y: number };
+  recipe?: string;
 }
 
 export interface ProductionStep {
@@ -293,8 +294,9 @@ function createProductionStep(productionStep: ProductionStepInit): ProductionSte
   const { product } = productionStep;
   const id = nanoid();
   const itemData = items.map[product.item];
+  let recipe = productionStep.recipe;
   // Pick first non-alternate recipe as default
-  let recipe = itemData.createdBy.filter(recipe => !recipe.alternate)[0]?.id;
+  if (!recipe) recipe = itemData.createdBy.filter(recipe => !recipe.alternate)[0]?.id;
   // If non-alternates do not exist (possibly turbofuel, compacted coal) then just pick first recipe
   if (!recipe) recipe = itemData.createdBy[0]?.id;
   if (!recipe) return null;
