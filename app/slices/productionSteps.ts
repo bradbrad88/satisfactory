@@ -75,11 +75,11 @@ const reducers = {
       const { dependant } = props.options;
 
       // Apply new productionStep.id to the empty edge
-      if (!props.edge.input) {
-        props.edge.input = productionStep.id;
+      if (!props.edge.consumer) {
+        props.edge.consumer = productionStep.id;
       }
-      if (!props.edge.output) {
-        props.edge.output = productionStep.id;
+      if (!props.edge.supplier) {
+        props.edge.supplier = productionStep.id;
       }
       // props.edge[io] = productionStep.id;
 
@@ -117,9 +117,9 @@ const reducers = {
     // Get all edges related to the production step then split them into inputs and outputs
     const edges = productionStep.edges.map(id => state.edges.byId[id]);
     // This will gather edges that feed into the production step
-    const inputs = edges.filter(edge => edge.input === id);
+    const inputs = edges.filter(edge => edge.consumer === id);
     // This will gather edges that distribute out from the production step
-    const outputs = edges.filter(edge => edge.output === id);
+    const outputs = edges.filter(edge => edge.supplier === id);
 
     // Get the ratio - used against the original recipe to find new amount for each product
     const recipe = recipes.map[productionStep.recipe];
@@ -192,7 +192,8 @@ const reducers = {
     const amount = productionStep.edges
       .map(id => state.edges.byId[id])
       .filter(
-        edge => edge.output === productionStep.id && edge.item === productionStep.product.item
+        edge =>
+          edge.supplier === productionStep.id && edge.item === productionStep.product.item
       )
       .reduce((sum, edge) => sum + edge.amount, 0);
     reducers.updateProductQty(state, { payload: { productionStep: id, amount } });

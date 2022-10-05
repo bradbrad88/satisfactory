@@ -1,9 +1,10 @@
-import { nanoid, PayloadAction } from "@reduxjs/toolkit";
+import { nanoid } from "@reduxjs/toolkit";
 import type { EntityState } from "./entities";
-import { RootState } from "app/store";
 import productionStepsReducers from "./productionSteps";
 
-type InputOrOutput = { input: string; output?: string } | { input?: string; output: string };
+type InputOrOutput =
+  | { consumer: string; supplier?: string }
+  | { consumer?: string; supplier: string };
 
 // For the use-case where an edge and productionStep are created at the same time
 // All edges require both input and output to be valid but sometimes won't know a particular id until action prep.
@@ -15,10 +16,10 @@ export type EdgeOneSide = {
 
 export interface EdgeInit {
   id?: string;
-  input: string;
-  output: string;
-  amount: number;
   item: string;
+  consumer: string;
+  supplier: string;
+  amount: number;
   dependant?: string;
 }
 
@@ -27,16 +28,13 @@ export interface EdgeInit {
 export interface Edge {
   id: string;
   // edge points to this productionStep's input
-  input: string;
+  consumer: string;
   // edge points to this productionStep's output
-  output: string;
+  supplier: string;
   amount: number;
   item: string;
   dependant?: string;
 }
-
-// Output of this PS ---------------------------- Goes to input of this PS
-// productionStep.output => {output} edge {input} => productionStep.input
 
 export const edgeState = {
   edges: {
@@ -48,9 +46,9 @@ export const edgeState = {
 export const reducers = {
   createEdge: {
     reducer: (state: EntityState, action: { payload: Edge }) => {
-      const { input, output, id } = action.payload;
-      state.productionSteps.byId[input].edges.push(id);
-      state.productionSteps.byId[output].edges.push(id);
+      const { supplier, consumer, id } = action.payload;
+      state.productionSteps.byId[consumer].edges.push(id);
+      state.productionSteps.byId[supplier].edges.push(id);
       state.edges.byId[id] = action.payload;
       state.edges.allIds.push(id);
     },
@@ -78,8 +76,8 @@ export const reducers = {
       const idx = edges.indexOf(id);
       edges.splice(idx, 1);
     };
-    removeEdge(edge.input);
-    removeEdge(edge.output);
+    removeEdge(edge.supplier);
+    removeEdge(edge.consumer);
 
     const idx = edges.indexOf(id);
     edges.splice(idx, 1);
