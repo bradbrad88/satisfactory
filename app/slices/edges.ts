@@ -11,7 +11,7 @@ type InputOrOutput =
 export type EdgeOneSide = {
   amount: number;
   item: string;
-  dependant?: string;
+  dependant?: "SUPPLIER" | "CONSUMER";
 } & InputOrOutput;
 
 export interface EdgeInit {
@@ -20,7 +20,7 @@ export interface EdgeInit {
   consumer: string;
   supplier: string;
   amount: number;
-  dependant?: string;
+  dependant?: "SUPPLIER" | "CONSUMER";
 }
 
 // Rather than treat input and output as relative to the edge, we're treating them as relative to where they're coming/going from
@@ -61,9 +61,6 @@ export const reducers = {
     const { id, amount } = action.payload;
     const edge = state.edges.byId[id];
     edge.amount = amount;
-    if (edge.dependant) {
-      productionStepsReducers.updateProductQtyToSumOfEdges(state, { payload: edge.dependant });
-    }
   },
   destroyEdge: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
@@ -94,3 +91,8 @@ export const reducers = {
 export default {
   ...reducers,
 };
+
+export function getDependantEdge(edge: Edge) {
+  if (!edge.dependant) return null;
+  return edge[edge.dependant.toLowerCase() as "consumer" | "supplier"];
+}
