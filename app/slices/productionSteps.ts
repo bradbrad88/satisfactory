@@ -1,6 +1,6 @@
 import { nanoid } from "@reduxjs/toolkit";
 import { RootState } from "app/store";
-import { reducers as edgeReducers } from "./edges";
+import { getDependantEdge, reducers as edgeReducers } from "./edges";
 import { items, recipes, buildings } from "data";
 
 import type { EntityState } from "./entities";
@@ -62,7 +62,6 @@ const reducers = {
     prepare: (props: {
       productionStep: ProductionStepInit;
       edge: EdgeOneSide;
-      options: { dependant?: true | string };
     }): {
       payload: {
         productionStep: ProductionStep;
@@ -71,24 +70,14 @@ const reducers = {
     } => {
       const productionStep = createProductionStep(props.productionStep);
       if (!productionStep) return { payload: null };
-      // Find the empty edge - either input or output - and provide new
-      const { dependant } = props.options;
 
+      // Find the empty edge - either input or output - and provide new
       // Apply new productionStep.id to the empty edge
       if (!props.edge.consumer) {
         props.edge.consumer = productionStep.id;
       }
       if (!props.edge.supplier) {
         props.edge.supplier = productionStep.id;
-      }
-      // props.edge[io] = productionStep.id;
-
-      if (dependant) {
-        if (typeof dependant === "string") {
-          props.edge.dependant = dependant;
-        } else {
-          props.edge.dependant = productionStep.id;
-        }
       }
       const edge = { ...props.edge, id: nanoid() } as Edge;
       return {
@@ -107,7 +96,9 @@ const reducers = {
   },
   updateProductQty: (
     state: EntityState,
-    action: { payload: { productionStep: string; amount: number } }
+    action: {
+      payload: { productionStep: string; amount: number; clearDependants?: boolean };
+    }
   ) => {
     const { productionStep: id, amount } = action.payload;
     const productionStep = state.productionSteps.byId[id];
@@ -120,7 +111,6 @@ const reducers = {
     const inputs = edges.filter(edge => edge.consumer === id);
     // This will gather edges that distribute out from the production step
     const outputs = edges.filter(edge => edge.supplier === id);
-
     // Get the ratio - used against the original recipe to find new amount for each product
     const recipe = recipes.map[productionStep.recipe];
     const recipeItem = recipe.product.find(
@@ -129,16 +119,27 @@ const reducers = {
     const ratio = productionStep.product.amount / recipeItem.amount;
 
     // Responsible for handling how the new amounts for each item are distributed to each edge
-    const processProduct = (edges: Edge[], product: Ingredient) => {
+    const processProduct = (
+      edges: Edge[],
+      amount: number,
+      dependant: "CONSUMER" | "SUPPLIER"
+    ) => {
       // Separate the dependants from the static
       // Static edges will remain constant - the dependant edges need to work around this.
-      // The case where this production step is
-      const staticEdges = edges.filter(edge => !edge.dependant || edge.dependant === id);
-      const dependantEdges = edges.filter(edge => edge.dependant && edge.dependant !== id);
+      const dependantEdges = edges.filter(
+        edge => edge.dependant && edge.dependant !== dependant
+      );
       // If 0 dependants then exit
       if (!dependantEdges.length) return;
+      const staticEdges = edges.filter(
+        edge => !edge.dependant || edge.dependant === dependant
+      );
+      console.log(
+        JSON.parse(JSON.stringify(dependantEdges)),
+        JSON.parse(JSON.stringify(staticEdges))
+      );
       // Find new input total
-      let newAmount = product.amount * ratio;
+      let newAmount = amount;
       // Minus static edges
       staticEdges.forEach(edge => {
         newAmount -= edge.amount;
@@ -150,23 +151,113 @@ const reducers = {
       dependantEdges.forEach((edge, idx) => {
         let amount = newAmount / (dependantEdges.length - idx); // Implement limits here
         newAmount -= amount;
-        edgeReducers.updateEdgeQty(state, {
-          payload: { amount, id: edge.id },
-        });
+
+        if (amount !== edge.amount) {
+          edgeReducers.updateEdgeQty(state, {
+            payload: { amount, id: edge.id },
+          });
+          reducers.assessProductAmount(state, {
+            payload: getDependantEdge(edge)!,
+          });
+        }
       });
     };
 
     // Run processing function on ingredients
     recipe.ingredients.forEach(ingredient => {
       const edges = inputs.filter(edge => edge.item === ingredient.item);
-      processProduct(edges, ingredient);
+      const amount = ingredient.amount * ratio;
+      processProduct(edges, amount, "CONSUMER");
     });
 
     // Run processing function on products
     recipe.product.forEach(product => {
       const edges = outputs.filter(edge => edge.item === product.item);
-      processProduct(edges, product);
+      const amount = product.amount * ratio;
+      processProduct(edges, amount, "SUPPLIER");
     });
+  },
+  assessProductAmount: (state: EntityState, action: { payload: string }) => {
+    // Get production step
+    const id = action.payload;
+    const productionStep = state.productionSteps.byId[id];
+    let maxAmount = 0;
+    // Get an object describing recipe items that have dependants so we can process those particular edges
+    const recipeItems = productionStep.edges
+      .map(id => state.edges.byId[id])
+      .filter(edge => edge.dependant)
+      .reduce(
+        (obj, edge) => {
+          // If the current step is the dependant step in the edge
+          if (getDependantEdge(edge) === id) {
+            // Work out whether it's an input or output
+            // If edge.dependant === "SUPPLIER" then we are looking at the input of the current step
+            const io = edge.dependant === "SUPPLIER" ? "product" : "ingredients";
+            obj[io][edge.item] = true;
+          }
+          return obj;
+        },
+        { ingredients: {}, product: {} } as {
+          ingredients: { [key: string]: true };
+          product: { [key: string]: true };
+        }
+      );
+    const recipe = recipes.map[productionStep.recipe];
+    const product = recipe.product.find(
+      product => product.item === productionStep.product.item
+    )!;
+    // for each outputs get the recipe item amount and compare with maxAmount
+
+    const processItems = (io: "ingredients" | "product") => {
+      const edgeSide = io === "ingredients" ? "CONSUMER" : "SUPPLIER";
+      Object.keys(recipeItems[io]).forEach(key => {
+        const recipeItem = recipe[io].find(product => product.item === key);
+        if (!recipeItem) return;
+        // Get all edges related to this product/ingredient
+        // Filter by item and where either consumer/supplier === id
+        const edges = productionStep.edges
+          .map(id => state.edges.byId[id])
+          .filter(edge => edge.item === key && getDependantEdge(edge) === id);
+        // Process the edges, starting with static, then limited, then dependants
+        const dependantEdges = edges.filter(edge => edge.dependant === edgeSide);
+        const staticEdges = edges.filter(edge => !edge.dependant);
+
+        const reducer = (sum: number, edge: Edge) => edge.amount + sum;
+
+        const itemAmount = dependantEdges.reduce(reducer, 0) + staticEdges.reduce(reducer, 0);
+
+        // Turn the item amount (sum of edges) into productionStep product amount
+
+        const ratio = itemAmount / recipeItem.amount;
+
+        const amount = product.amount * ratio;
+        // Compare against current max amount
+        maxAmount = Math.max(maxAmount, amount);
+      });
+    };
+
+    processItems("ingredients");
+    processItems("product");
+
+    // By this stage maxAmount will be our new product amount
+    if (maxAmount !== productionStep.product.amount) {
+      reducers.updateProductQty(state, {
+        payload: { amount: maxAmount, productionStep: productionStep.id },
+      });
+      //
+      const edges = productionStep.edges
+        .map(id => state.edges.byId[id])
+        .filter(
+          edge =>
+            edge.dependant &&
+            edge[edge.dependant.toLowerCase() as "supplier" | "consumer"] !== id
+        );
+      edges.forEach(edge =>
+        reducers.assessProductAmount(state, {
+          payload: getDependantEdge(edge)!,
+        })
+      );
+    }
   },
   updateBuildingCount: (
     state: EntityState,
