@@ -30,7 +30,7 @@ const DropZone = ({ children }: Proptypes) => {
     const { type, id, item, amount } = dragElement;
     switch (type) {
       case "input": {
-        const edge: EdgeOneSide = { amount, item, input: id };
+        const edge: EdgeOneSide = { amount, item, consumer: id, dependant: "SUPPLIER" };
         const x = (e.clientX - mapX) / scale;
         const y = (e.clientY - mapY) / scale;
         const location = { x, y };
@@ -38,7 +38,6 @@ const DropZone = ({ children }: Proptypes) => {
         return dispatch(
           action.createProductionStepAndLinkEdge({
             edge,
-            options: { dependant: true },
             productionStep,
           })
         );
