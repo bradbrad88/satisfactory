@@ -33,9 +33,10 @@ const RecipeList = ({ recipes, amount, item, id, location, close }: Proptypes) =
     const ratio = amount / recipeItem.amount;
 
     const edge: EdgeOneSide = {
-      output: id,
+      supplier: id,
       amount,
-      item: product.item,
+      item,
+      dependant: "CONSUMER",
     };
     const productionStep = {
       factory,
@@ -48,7 +49,6 @@ const RecipeList = ({ recipes, amount, item, id, location, close }: Proptypes) =
       action.createProductionStepAndLinkEdge({
         edge,
         productionStep,
-        options: { dependant: true },
       })
     );
     close();
