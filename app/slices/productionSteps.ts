@@ -58,6 +58,16 @@ const reducers = {
       state.productionSteps.allIds.push(id);
       state.factories.byId[factory].productionSteps.push(id);
       edgeReducers.createEdge.reducer(state, { payload: edge });
+      const existingProductionStep =
+        edge.dependant === "CONSUMER" ? edge.supplier : edge.consumer;
+      console.log(existingProductionStep);
+      reducers.updateProductQty(state, {
+        payload: {
+          amount: state.productionSteps.byId[existingProductionStep].product.amount,
+          productionStep: existingProductionStep,
+        },
+      });
+      // reducers.assessProductAmount(state, { payload: existingProductionStep });
     },
     prepare: (props: {
       productionStep: ProductionStepInit;
@@ -85,27 +95,9 @@ const reducers = {
       };
     },
   },
-  updateRecipe: (
-    state: EntityState,
-    action: { payload: { productionStep: string; recipe: string } }
-  ) => {
-    const { productionStep, recipe } = action.payload;
-    state.productionSteps.byId[productionStep].recipe = recipe;
-    reducers.optimiseBuidingCount(state, { payload: productionStep });
-    // Handle edges
-  },
-  updateProductQty: (
-    state: EntityState,
-    action: {
-      payload: { productionStep: string; amount: number; clearDependants?: boolean };
-    }
-  ) => {
-    const { productionStep: id, amount, clearDependants } = action.payload;
+  calculateEdges: (state: EntityState, action: { payload: string }) => {
+    const id = action.payload;
     const productionStep = state.productionSteps.byId[id];
-    productionStep.product.amount = amount;
-    reducers.optimiseBuidingCount(state, { payload: id });
-
-    if (clearDependants) reducers.makeIndependant(state, { payload: id });
 
     // Get all edges related to the production step then split them into inputs and outputs
     const edges = productionStep.edges.map(id => state.edges.byId[id]);
@@ -140,7 +132,7 @@ const reducers = {
       let newAmount = amount;
       // Minus static edges
       staticEdges.forEach(edge => {
-        if (edge.amount > newAmount) {
+        if (edge.amount > newAmount && dependant === "SUPPLIER") {
           edge.amount = newAmount;
         }
         newAmount -= edge.amount;
@@ -153,14 +145,12 @@ const reducers = {
         let amount = newAmount / (dependantEdges.length - idx); // Implement limits here
         newAmount -= amount;
 
-        if (amount !== edge.amount) {
-          edgeReducers.updateEdgeQty(state, {
-            payload: { amount, id: edge.id },
-          });
-          reducers.assessProductAmount(state, {
-            payload: getDependantEdge(edge)!,
-          });
-        }
+        edgeReducers.updateEdgeQty(state, {
+          payload: { amount, id: edge.id },
+        });
+        reducers.assessProductAmount(state, {
+          payload: getDependantEdge(edge)!,
+        });
       });
     };
 
@@ -178,10 +168,35 @@ const reducers = {
       processProduct(edges, amount, "SUPPLIER");
     });
   },
+  updateRecipe: (
+    state: EntityState,
+    action: { payload: { productionStep: string; recipe: string } }
+  ) => {
+    const { productionStep, recipe } = action.payload;
+    state.productionSteps.byId[productionStep].recipe = recipe;
+    reducers.optimiseBuidingCount(state, { payload: productionStep });
+    // Handle edges
+  },
+  updateProductQty: (
+    state: EntityState,
+    action: {
+      payload: { productionStep: string; amount: number; clearDependants?: boolean };
+    }
+  ) => {
+    const { productionStep: id, amount, clearDependants } = action.payload;
+    const productionStep = state.productionSteps.byId[id];
+    productionStep.product.amount = amount;
+    reducers.optimiseBuidingCount(state, { payload: id });
+
+    if (clearDependants) reducers.makeIndependant(state, { payload: id });
+
+    reducers.calculateEdges(state, { payload: id });
+  },
   assessProductAmount: (state: EntityState, action: { payload: string }) => {
     // Get production step
     const id = action.payload;
     const productionStep = state.productionSteps.byId[id];
+    lg(productionStep);
     let maxAmount = 0;
 
     const recipe = recipes.map[productionStep.recipe];
@@ -223,34 +238,32 @@ const reducers = {
 
     // By this stage maxAmount will be our new product amount
 
-    if (maxAmount !== productionStep.product.amount) {
-      if (isIndependant(state, productionStep)) {
-        // If the production step is independant then we only want to make sure the production amount is >= maxAmount
-        if (productionStep.product.amount < maxAmount) {
-          reducers.updateProductQty(state, {
-            payload: { amount: maxAmount, productionStep: productionStep.id },
-          });
-        }
-      } else {
-        // Otherwise, set it directly to maxAmount
+    if (isIndependant(state, productionStep)) {
+      // If the production step is independant then we only want to make sure the production amount is >= maxAmount
+      if (productionStep.product.amount < maxAmount) {
         reducers.updateProductQty(state, {
           payload: { amount: maxAmount, productionStep: productionStep.id },
         });
       }
-      //
-      const edges = productionStep.edges
-        .map(id => state.edges.byId[id])
-        .filter(
-          edge =>
-            edge.dependant &&
-            edge[edge.dependant.toLowerCase() as "supplier" | "consumer"] !== id
-        );
-      edges.forEach(edge =>
-        reducers.assessProductAmount(state, {
-          payload: getDependantEdge(edge)!,
-        })
-      );
+    } else {
+      // Otherwise, set it directly to maxAmount
+      reducers.updateProductQty(state, {
+        payload: { amount: maxAmount, productionStep: productionStep.id },
+      });
     }
+    //
+    const edges = productionStep.edges
+      .map(id => state.edges.byId[id])
+      .filter(
+        edge =>
+          edge.dependant &&
+          edge[edge.dependant.toLowerCase() as "supplier" | "consumer"] !== id
+      );
+    edges.forEach(edge =>
+      reducers.assessProductAmount(state, {
+        payload: getDependantEdge(edge)!,
+      })
+    );
   },
   updateBuildingCount: (
     state: EntityState,
