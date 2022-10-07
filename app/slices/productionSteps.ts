@@ -183,26 +183,7 @@ const reducers = {
     const id = action.payload;
     const productionStep = state.productionSteps.byId[id];
     let maxAmount = 0;
-    // Get an object describing recipe items that have dependants so we can process those particular edges
-    const recipeItems = productionStep.edges
-      .map(id => state.edges.byId[id])
-      .filter(edge => edge.dependant)
-      .reduce(
-        (obj, edge) => {
-          // If the current step is the dependant step in the edge
-          if (getDependantEdge(edge) === id) {
-            // Work out whether it's an input or output
-            // If edge.dependant === "SUPPLIER" then we are looking at the input of the current step
-            const io = edge.dependant === "SUPPLIER" ? "product" : "ingredients";
-            obj[io][edge.item] = true;
-          }
-          return obj;
-        },
-        { ingredients: {}, product: {} } as {
-          ingredients: { [key: string]: true };
-          product: { [key: string]: true };
-        }
-      );
+
     const recipe = recipes.map[productionStep.recipe];
     const product = recipe.product.find(
       product => product.item === productionStep.product.item
@@ -211,27 +192,27 @@ const reducers = {
 
     const processItems = (io: "ingredients" | "product") => {
       const edgeSide = io === "ingredients" ? "CONSUMER" : "SUPPLIER";
-      Object.keys(recipeItems[io]).forEach(key => {
-        const recipeItem = recipe[io].find(product => product.item === key);
+      Object.values(recipe[io]).forEach(recipeItem => {
         if (!recipeItem) return;
         // Get all edges related to this product/ingredient
         // Filter by item and where either consumer/supplier === id
         const edges = productionStep.edges
           .map(id => state.edges.byId[id])
-          .filter(edge => edge.item === key && getDependantEdge(edge) === id);
+          .filter(
+            edge =>
+              edge.item === recipeItem.item &&
+              edge[edgeSide.toLowerCase() as "consumer" | "supplier"] === id
+          );
         // Process the edges, starting with static, then limited, then dependants
         const dependantEdges = edges.filter(edge => edge.dependant === edgeSide);
         const staticEdges = edges.filter(edge => !edge.dependant);
-
         const reducer = (sum: number, edge: Edge) => edge.amount + sum;
-
         const itemAmount = dependantEdges.reduce(reducer, 0) + staticEdges.reduce(reducer, 0);
 
         // Turn the item amount (sum of edges) into productionStep product amount
-
         const ratio = itemAmount / recipeItem.amount;
-
         const amount = product.amount * ratio;
+
         // Compare against current max amount
         maxAmount = Math.max(maxAmount, amount);
       });
@@ -241,10 +222,21 @@ const reducers = {
     processItems("product");
 
     // By this stage maxAmount will be our new product amount
+
     if (maxAmount !== productionStep.product.amount) {
-      reducers.updateProductQty(state, {
-        payload: { amount: maxAmount, productionStep: productionStep.id },
-      });
+      if (isIndependant(state, productionStep)) {
+        // If the production step is independant then we only want to make sure the production amount is >= maxAmount
+        if (productionStep.product.amount < maxAmount) {
+          reducers.updateProductQty(state, {
+            payload: { amount: maxAmount, productionStep: productionStep.id },
+          });
+        }
+      } else {
+        // Otherwise, set it directly to maxAmount
+        reducers.updateProductQty(state, {
+          payload: { amount: maxAmount, productionStep: productionStep.id },
+        });
+      }
       //
       const edges = productionStep.edges
         .map(id => state.edges.byId[id])
@@ -423,4 +415,15 @@ function getProductionRatio(recipeId: string, product: Ingredient): number | nul
   const recipeItem = recipe.product.find(product => product.item === product.item);
   if (!recipeItem) return null;
   return product.amount / recipeItem.amount;
+}
+
+function lg(item: any) {
+  console.log(JSON.parse(JSON.stringify(item)));
+}
+
+function isIndependant(state: EntityState, productionStep: ProductionStep) {
+  const dependancies = productionStep.edges
+    .map(id => state.edges.byId[id])
+    .filter(edge => getDependantEdge(edge) === productionStep.id);
+  return dependancies.length < 1;
 }
