@@ -58,11 +58,21 @@ export const reducers = {
       return { payload: newEdge };
     },
   },
+  updateEdgeQtyAndCalculateProdStepEdges: (
+    state: EntityState,
+    action: { payload: { id: string; amount: number; clearDependant?: true } }
+  ) => {
+    const { id, clearDependant } = action.payload;
+    const edge = state.edges.byId[id];
+    reducers.updateEdgeQty(state, action);
+    if (clearDependant) edge.dependant = undefined;
+    productionStepsReducers.calculateEdges(state, { payload: edge.consumer });
+    productionStepsReducers.assessProductAmount(state, { payload: edge.supplier });
+  },
   updateEdgeQty: (state: EntityState, action: { payload: { id: string; amount: number } }) => {
     const { id, amount } = action.payload;
     const edge = state.edges.byId[id];
     edge.amount = amount;
-    productionStepsReducers.assessProductAmount(state, { payload: edge.supplier });
   },
   destroyEdge: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
