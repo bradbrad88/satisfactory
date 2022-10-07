@@ -33,7 +33,7 @@ const IODrag = ({ productionStep, product, qtyEditable, io }: Proptypes) => {
 
   const submitQtyUpdate = (amount: number) => {
     if (amount !== product.amount)
-      dispatch(action.updateProductQty({ productionStep, amount }));
+      dispatch(action.updateProductQty({ productionStep, amount, clearDependants: true }));
   };
 
   return (
