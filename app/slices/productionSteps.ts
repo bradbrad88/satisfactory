@@ -100,10 +100,12 @@ const reducers = {
       payload: { productionStep: string; amount: number; clearDependants?: boolean };
     }
   ) => {
-    const { productionStep: id, amount } = action.payload;
+    const { productionStep: id, amount, clearDependants } = action.payload;
     const productionStep = state.productionSteps.byId[id];
     productionStep.product.amount = amount;
     reducers.optimiseBuidingCount(state, { payload: id });
+
+    if (clearDependants) reducers.makeIndependant(state, { payload: id });
 
     // Get all edges related to the production step then split them into inputs and outputs
     const edges = productionStep.edges.map(id => state.edges.byId[id]);
@@ -129,19 +131,18 @@ const reducers = {
       const dependantEdges = edges.filter(
         edge => edge.dependant && edge.dependant !== dependant
       );
-      // If 0 dependants then exit
-      if (!dependantEdges.length) return;
+
       const staticEdges = edges.filter(
         edge => !edge.dependant || edge.dependant === dependant
       );
-      console.log(
-        JSON.parse(JSON.stringify(dependantEdges)),
-        JSON.parse(JSON.stringify(staticEdges))
-      );
+
       // Find new input total
       let newAmount = amount;
       // Minus static edges
       staticEdges.forEach(edge => {
+        if (edge.amount > newAmount) {
+          edge.amount = newAmount;
+        }
         newAmount -= edge.amount;
       });
       // Don't allow going into negatives. Imbalance is ok, but a production step going into negative qty is not
@@ -295,6 +296,17 @@ const reducers = {
   ) => {
     const { id, location } = action.payload;
     state.productionSteps.byId[id].location = location;
+  },
+  makeIndependant: (state: EntityState, action: { payload: string }) => {
+    const id = action.payload;
+    const productionStep = state.productionSteps.byId[id];
+    if (!productionStep) return;
+    const edges = productionStep.edges
+      .map(id => state.edges.byId[id])
+      .filter(edge => getDependantEdge(edge) === id);
+    edges.forEach(edge => {
+      edge.dependant = undefined;
+    });
   },
   destroyProductionStep: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
