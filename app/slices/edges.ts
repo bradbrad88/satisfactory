@@ -1,4 +1,5 @@
 import { nanoid } from "@reduxjs/toolkit";
+import { RootState } from "app/store";
 import type { EntityState } from "./entities";
 import productionStepsReducers from "./productionSteps";
 
@@ -61,6 +62,7 @@ export const reducers = {
     const { id, amount } = action.payload;
     const edge = state.edges.byId[id];
     edge.amount = amount;
+    productionStepsReducers.assessProductAmount(state, { payload: edge.supplier });
   },
   destroyEdge: (state: EntityState, action: { payload: string }) => {
     const id = action.payload;
@@ -95,4 +97,26 @@ export default {
 export function getDependantEdge(edge: Edge) {
   if (!edge.dependant) return null;
   return edge[edge.dependant.toLowerCase() as "consumer" | "supplier"];
+}
+
+export function getFactoryEdges(factoryId: string) {
+  return (state: RootState) => {
+    const factory = state.entities.factories.byId[factoryId];
+    if (!factory) return null;
+    const edgeSet = factory.productionSteps
+      .map(id => state.entities.productionSteps.byId[id])
+      .reduce((set, productionStep) => {
+        productionStep.edges.forEach(edge => {
+          set.add(edge);
+        });
+        return set;
+      }, new Set());
+    return Array.from(edgeSet) as string[];
+  };
+}
+
+export function getEdge(id: string) {
+  return (state: RootState) => {
+    return state.entities.edges.byId[id];
+  };
 }
