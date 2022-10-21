@@ -333,15 +333,24 @@ const reducers = {
   },
 };
 
-export const getProductionSteps = (state: RootState) => {
-  const factory = state.entities.factories.active;
-  if (!factory) return [];
-  return state.entities.factories.byId[factory].productionSteps;
+export const getProductionSteps = (factory: string) => {
+  return (state: RootState) => {
+    if (!factory) return [];
+    return state.entities.factories.byId[factory].productionSteps;
+  };
 };
 
 export const getProductionStep = (id: string) => {
   return (state: RootState) => {
     return state.entities.productionSteps.byId[id];
+  };
+};
+
+export const getMainProduct = (id: string) => {
+  return (state: RootState) => {
+    const productionStep = state.entities.productionSteps.byId[id];
+    if (!productionStep) return null;
+    return { ...productionStep.product };
   };
 };
 
