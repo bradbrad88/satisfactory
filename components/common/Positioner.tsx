@@ -14,12 +14,11 @@ interface Proptypes<P> {
   id: string;
   x: number;
   y: number;
-  updater: ActionCreatorWithPayload<Payload>;
+  updater?: ActionCreatorWithPayload<Payload>;
 }
 
 const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>) => {
   const [dragging, setDragging] = useState(false);
-  const [dragPosition, setDragPosition] = useState({ x, y });
   // Required to calculate on current dragging position
   const draggingRef = useRef(dragging);
   // Distance between productionStep top-left corner and where pointer clicked
@@ -42,9 +41,10 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
       const { left, top, mapScale: scale } = mapDetailsRef.current;
       const newX = (e.clientX - left) / scale - offsetX;
       const newY = (e.clientY - top) / scale - offsetY;
-      dispatch(updater({ id, location: { x: newX, y: newY } }));
+      if (typeof updater === "function")
+        dispatch(updater({ id, location: { x: newX, y: newY } }));
     },
-    [mouseOffset.current, mapDetailsRef.current, setDragPosition]
+    [mouseOffset.current, mapDetailsRef.current]
   );
 
   useEffect(() => {
@@ -63,7 +63,8 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
     const { x: offsetX, y: offsetY } = mouseOffset.current;
     const newX = (e.clientX - mapX) / scale - offsetX;
     const newY = (e.clientY - mapY) / scale - offsetY;
-    setDragPosition({ x: newX, y: newY });
+    if (typeof updater === "function")
+      dispatch(updater({ id, location: { x: newX, y: newY } }));
   }
 
   const onPointerDown: React.PointerEventHandler = e => {
@@ -78,11 +79,13 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
   };
 
   const style: React.CSSProperties = {
-    left: dragging ? dragPosition.x : x,
-    top: dragging ? dragPosition.y : y,
+    left: x,
+    top: y,
+    width: 1,
+    height: 1,
   };
 
-  const className = classnames("absolute", "cursor-grab", {
+  const classes = classnames("absolute", "cursor-grab", {
     "cursor-grabbing": dragging,
     "cursor-grab": !dragging,
   });
@@ -90,7 +93,7 @@ const Positioner = <P extends {}>({ children, id, x, y, updater }: Proptypes<P>)
   return (
     <div
       style={style}
-      className={className}
+      className={classes}
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
     >
