@@ -1,12 +1,14 @@
 import { useAppSelector } from "app/hooks";
 import { getBuildingDetails } from "app/slices/productionSteps";
 
+import type { ProductionStep } from "app/slices/productionSteps";
+
 interface Proptypes {
-  productionStep: string;
+  productionStep: ProductionStep;
 }
 
 const ProductionDetails = ({ productionStep }: Proptypes) => {
-  const buildingDetails = useAppSelector(getBuildingDetails(productionStep));
+  const buildingDetails = useAppSelector(getBuildingDetails(productionStep.id));
   if (!buildingDetails) return <div>Details Unavailable</div>;
   return (
     <div className="bg-zinc-800 rounded-md p-2">

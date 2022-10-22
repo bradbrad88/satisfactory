@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import { useAppDispatch, useAppSelector } from "app/hooks";
+import { useAppSelector } from "app/hooks";
 import { getActiveFactory } from "app/slices/factories";
 
 import Map from "components/features/Map";
@@ -9,6 +9,7 @@ import FactoryToolbar from "components/features/factory/FactoryToolbar";
 import ItemLookup from "components/features/ItemLookup";
 import FactoryMap from "components/features/factory/FactoryMap";
 import LocalStorageLoader from "components/common/LocalStorageLoader";
+import IOMap from "components/features/factory/IOMap";
 
 const panelOptions = {
   itemLookup: "ITEM_LOOKUP",
@@ -37,15 +38,18 @@ const Factory = () => {
     }
   };
   return (
-    <div className="bg-zinc-900 h-screen touch-none">
+    <div className="relative bg-zinc-900 h-screen touch-none">
       <LocalStorageLoader />
-      <Map>
-        <FactoryMap />
-      </Map>
-      <OverlayToolbar
-        leftPanel={getLeftPanel()}
-        bottomPanel={<FactoryToolbar toggleItemPanel={toggleItemPanel} />}
-      />
+      <div className="relative h-full w-full">
+        <Map>
+          <FactoryMap factory={activeFactory!} />
+        </Map>
+        <IOMap factory={activeFactory} />
+        <OverlayToolbar
+          leftPanel={getLeftPanel()}
+          bottomPanel={<FactoryToolbar toggleItemPanel={toggleItemPanel} />}
+        />
+      </div>
     </div>
   );
 };

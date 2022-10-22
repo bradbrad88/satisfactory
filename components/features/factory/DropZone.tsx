@@ -29,7 +29,7 @@ const DropZone = ({ children }: Proptypes) => {
     if (!dragElement) return;
     const { type, id, item, amount } = dragElement;
     switch (type) {
-      case "input": {
+      case "consumer": {
         const edge: EdgeOneSide = { amount, item, consumer: id, dependant: "SUPPLIER" };
         const x = (e.clientX - mapX) / scale;
         const y = (e.clientY - mapY) / scale;
@@ -43,7 +43,7 @@ const DropZone = ({ children }: Proptypes) => {
         );
       }
 
-      case "output": {
+      case "supplier": {
         const itemData = items.map[item];
 
         const location = { x: (e.clientX - mapX) / scale, y: (e.clientY - mapY) / scale };

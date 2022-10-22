@@ -1,22 +1,23 @@
 import { useAppSelector } from "app/hooks";
-import { getByProducts } from "app/slices/productionSteps";
-import IODrag from "./IODrag";
+import { getByProducts, ProductionStep } from "app/slices/productionSteps";
+import { shallowEqual } from "react-redux";
+import Transput from "./Transput";
 
 interface Proptypes {
-  productionStep: string;
+  productionStep: ProductionStep;
 }
 
 const ByProducts = ({ productionStep }: Proptypes) => {
-  const byProducts = useAppSelector(getByProducts(productionStep));
+  const byProducts = useAppSelector(getByProducts(productionStep.id), shallowEqual);
 
   const renderByProducts = () => {
     return (
-      byProducts?.map(byProduct => (
-        <IODrag
-          io="output"
-          product={byProduct}
+      byProducts?.map(product => (
+        <Transput
+          key={productionStep + product.item + "supplier"}
           productionStep={productionStep}
-          key={productionStep + byProduct.item}
+          product={product}
+          io="supplier"
         />
       )) || []
     );
