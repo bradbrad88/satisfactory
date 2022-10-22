@@ -3,13 +3,20 @@ import React from "react";
 
 interface Proptypes {
   children: React.ReactNode;
+  className?: string;
   selected?: boolean;
   onClick?: (e: React.MouseEvent) => void;
 }
 
-const Container = ({ children, selected = false, onClick = () => {} }: Proptypes) => {
+const Container = ({
+  children,
+  className = "bg-zinc-800",
+  selected = false,
+  onClick = () => {},
+}: Proptypes) => {
   const classes = classnames(
-    "border-zinc-400 border-2 bg-zinc-800 rounded-lg hover:shadow-zinc-400 hover:shadow-md cursor-pointer min-w-[120px] p-2 transition-all overflow-hidden",
+    className,
+    "h-full border-zinc-400 border-2 rounded-lg hover:shadow-zinc-400 hover:shadow-md cursor-pointer min-w-[120px] p-2 transition-all overflow-hidden",
     { "border-amber-500": selected }
   );
   return (
