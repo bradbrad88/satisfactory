@@ -1,6 +1,7 @@
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { shallowEqual } from "react-redux";
 import { useAppDispatch, useAppSelector } from "app/hooks";
-import { getMapDetails, setMapBoundingRect, setMapScale } from "app/slices/ui";
-import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getMapDetails, setMapScalingRect, setMapFrameRect, setMapScale } from "app/slices/ui";
 
 interface Proptypes {
   children: React.ReactNode;
@@ -16,7 +17,7 @@ const Map = ({ children }: Proptypes) => {
   const canvasRef = useRef<HTMLDivElement>(null);
   const transformingRef = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
-  const mapDetails = useAppSelector(getMapDetails);
+  const mapDetails = useAppSelector(getMapDetails, shallowEqual);
   const mapDetailsRef = useRef(mapDetails);
   mapDetailsRef.current = mapDetails;
   const { top, left, mapScale } = mapDetailsRef.current;
@@ -37,11 +38,22 @@ const Map = ({ children }: Proptypes) => {
   }, []);
 
   useEffect(() => {
+    function onResize() {
+      if (!mapRef.current) return;
+      const { height, left, top, width } = mapRef.current?.getBoundingClientRect();
+      dispatch(setMapFrameRect({ height, left, top, width }));
+    }
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
     if (!transformingRef.current) return;
     const clientRect = transformingRef.current.getBoundingClientRect();
     if (left !== clientRect.left || top !== clientRect.top) {
       const { top, left, width, height } = clientRect;
-      dispatch(setMapBoundingRect({ top, left, width, height }));
+      dispatch(setMapScalingRect({ top, left, width, height }));
     }
   });
 
@@ -118,7 +130,7 @@ const Map = ({ children }: Proptypes) => {
 
   return (
     // Static frame
-    <div ref={mapRef} className="w-full h-full overflow-hidden" onWheel={onWheel}>
+    <div ref={mapRef} className="relative w-full h-full overflow-hidden" onWheel={onWheel}>
       {/* Motion canvas */}
       <div
         ref={canvasRef}
@@ -127,7 +139,7 @@ const Map = ({ children }: Proptypes) => {
         onPointerDown={onPointerDown}
       >
         {/* Canvas without padding */}
-        <div>
+        <div className="relative w-full h-full">
           <div ref={transformingRef} className="relative" style={innerStyle}>
             {children}
           </div>
